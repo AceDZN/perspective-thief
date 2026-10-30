@@ -1,0 +1,7 @@
+*.log
+.DS_Store
+assets-src/
+dist
+node_modules
+output
+test-output
