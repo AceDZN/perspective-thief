@@ -590,7 +590,7 @@ export function buildLevel(level: Level): LevelView {
     let placardHost: THREE.Vector3;
     if (ex.pedestal > 0) {
       const ped = new THREE.Group();
-      const body = boxAt([-hw, 0, -hd], [hw, ex.pedestal, hd], M.marble());
+      const body = boxAt([-hw, 0, -hd], [hw, ex.pedestal - 0.05, hd], M.marble());
       ped.add(body);
       ped.add(boxAt([-hw - 0.05, 0, -hd - 0.05], [hw + 0.05, 0.1, hd + 0.05], M.marble()));
       ped.add(boxAt([-hw - 0.03, ex.pedestal - 0.05, -hd - 0.03], [hw + 0.03, ex.pedestal, hd + 0.03], M.brass()));
@@ -653,7 +653,7 @@ export function buildLevel(level: Level): LevelView {
   for (const t of level.targets) {
     targets.set(t.id, buildTarget(t, level, root));
     const fwd = new THREE.Vector3(Math.sin(t.yaw), 0, Math.cos(t.yaw));
-    const sp = new THREE.SpotLight('#ffd9a0', 22, 12, 0.55, 0.7, 1.3);
+    const sp = new THREE.SpotLight('#ffd9a0', 16, 12, 0.55, 0.7, 1.6);
     const c = new THREE.Vector3(...t.zone.c);
     sp.position.copy(c).addScaledVector(fwd, 2.2).setY(Math.min(R.h - 0.3, c.y + 4.2));
     sp.target.position.copy(c);
@@ -825,6 +825,12 @@ export function themeFog(level: Level): THREE.Color {
 function buildProp(p: Prop, level: Level, lasers: THREE.Object3D[], moonbeams: THREE.Object3D[]): THREE.Object3D {
   switch (p.kind) {
     case 'solid': {
+      // Faces lying exactly on a room wall would z-fight with the wallpaper: pull them 1.5 cm in.
+      const R0 = level.room;
+      const nudge = (v: number, lo: number, hi: number) => (Math.abs(v - lo) < 0.02 ? lo + 0.015 : Math.abs(v - hi) < 0.02 ? hi - 0.015 : v);
+      p = { ...p, min: [p.min[0], p.min[1], p.min[2]], max: [nudge(p.max[0], R0.x0, R0.x1), p.max[1], nudge(p.max[2], R0.z0, R0.z1)] };
+      p.min[0] = nudge(p.min[0], R0.x0, R0.x1);
+      p.min[2] = nudge(p.min[2], R0.z0, R0.z1);
       let m = { marble: M.marble(), stone: M.stone(), wood: M.wood(), brass: M.brass(), velvet: M.velvet(), steel: M.steel(), dark: M.dark() }[p.mat];
       const g = new THREE.Group();
       const sw = p.max[0] - p.min[0], sh = p.max[1] - p.min[1], sd = p.max[2] - p.min[2];
