@@ -2,6 +2,7 @@
 // No Three.js. The scene reads this state and renders it; tests drive it directly.
 import { LEVELS, type Exhibit, type Level, type Target, type V2, type V3 } from './levels.ts';
 import { checkDrop, explain, starsFor, type ConsequenceKind, type DropCheck } from './rules.ts';
+import { CASE_H, CASE_HALF, decorCases, type DecorCase } from './decor.ts';
 import { aabbOverlap, localBounds, rampTop, rayAABB, rotateOrientation, worldAABB, type AABB } from './shapes.ts';
 
 export const EYE = 1.6;
@@ -175,6 +176,7 @@ export class Sim {
   private pushT = 0;
   private stepDist = 0;
   private attempts = new Map<string, number>();
+  decor: DecorCase[] = [];
 
   constructor(levelOrId: Level | number) {
     this.level = typeof levelOrId === 'number' ? LEVELS.find((l) => l.id === levelOrId)! : levelOrId;
@@ -193,6 +195,7 @@ export class Sim {
         yaw: def.yaw,
       });
     }
+    this.decor = decorCases(this.level);
     this.rebuildColliders();
   }
 
@@ -207,6 +210,7 @@ export class Sim {
     const cs: Collider[] = [];
     for (const p of L.props) if (p.kind === 'solid') cs.push({ box: { min: p.min, max: p.max }, walkable: p.walkable });
     for (const p of L.props) if (p.kind === 'model' && p.collide) cs.push({ box: { min: [p.pos[0] - 0.4, p.pos[1], p.pos[2] - 0.4], max: [p.pos[0] + 0.4, p.pos[1] + p.h, p.pos[2] + 0.4] } });
+    for (const d of this.decor) cs.push({ box: { min: [d.pos[0] - CASE_HALF, 0, d.pos[1] - CASE_HALF], max: [d.pos[0] + CASE_HALF, CASE_H, d.pos[1] + CASE_HALF] } });
     for (const p of L.props) if (p.kind === 'mannequin') cs.push({ box: { min: [p.pos[0] - 0.25, 0, p.pos[1] - 0.25], max: [p.pos[0] + 0.25, p.h, p.pos[1] + 0.25] } });
     for (const ex of this.exhibits) {
       const def = ex.def;

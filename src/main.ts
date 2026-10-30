@@ -768,6 +768,17 @@ function syncView(dt: number, realtime: boolean): void {
     mat.opacity = gapFail ? 0.35 + Math.sin(sim.time * 12) * 0.2 : aimed ? 0.18 + Math.sin(sim.time * 6) * 0.08 : 0;
     tv.plate.visible = sim.targetActive(tv.target) || sim.solved.has(id);
   }
+  // Hint: the placard and the plate that make the ratio glow (never the answer).
+  if (sim.hintShown) {
+    const glowAmt = 0.45 + Math.sin(sim.time * 5) * 0.3;
+    for (const t of level.targets) {
+      if (!sim.targetActive(t)) continue;
+      const pm = view.placards.get(t.accepts);
+      if (pm) (pm.material as THREE.MeshStandardMaterial).emissiveIntensity = glowAmt;
+      const plane = view.targets.get(t.id)?.plate.children[0] as THREE.Mesh | undefined;
+      if (plane?.material) (plane.material as THREE.MeshStandardMaterial).emissiveIntensity = glowAmt;
+    }
+  }
   // Lasers turn off for solved loop/plate targets.
   for (const id of solvedLaserOff) {
     const t = level.targets.find((x) => x.id === id)!;

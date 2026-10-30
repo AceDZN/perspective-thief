@@ -44,7 +44,7 @@ export class Reloaded extends Error {}
 export async function retry(name, fn, tries = 4) {
   for (let i = 0; i < tries; i++) {
     try { return await fn(); } catch (e) {
-      if (/AP is not defined|Execution context was destroyed|Reloaded|render_game_to_text/.test(String(e?.message ?? e)) && i < tries - 1) { log(`[${name}] dev-server reload, retry ${i + 1}`); continue; }
+      if (/AP is not defined|PT is not defined|Execution context was destroyed|Cannot find context|Reloaded|render_game_to_text/.test(String(e?.message ?? e)) && i < tries - 1) { log(`[${name}] dev-server reload, retry ${i + 1}`); continue; }
       throw e;
     }
   }

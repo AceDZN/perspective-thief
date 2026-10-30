@@ -177,6 +177,32 @@ const scenarios = {
     results.l15 = { failure: s.failure, card: await cardText(page) };
     await ctx.close();
   },
+  // 2a': watch the guard come in from a distance, then hide right away.
+  async chase() {
+    const lv = L(12), t = lv.targets[0], pad = lv.pads[0];
+    const { ctx, page } = await level(12);
+    const c = await run(page, (p) => PT.grab('painting', p), pad.pos);
+    await run(page, (a) => PT.standFor(a.anchor, a.d2, a.dir, a.c), { anchor: t.anchor, d2: 9 * c.d1, dir: [0, 1], c: t.zone.c });
+    await run(page, () => { AP.act(); AP.tick(50); });
+    // During the 1.6 s consequence, turn toward the guard door (6, 2).
+    await run(page, (d) => { AP.face(d[0], d[1]); AP.pitchTo(0.05); }, lv.guardDoor);
+    await run(page, () => PT.waitPhase('chase'));
+    let s;
+    for (let i = 0; i < 4; i++) {
+      await run(page, () => AP.tick(250));
+      s = await shot(page, `p02j-guard-approach-${i}`);
+      log('guard approach', i, s.guard, s.player);
+    }
+    // Run to the hide spot.
+    await run(page, () => { const h = AP.S().hides[0]; AP.walkTo(h[0], h[1], 0.5); AP.tick(50); });
+    s = await shot(page, 'p02k-hidden-view');
+    log('hide result', s.phase, s.guard, s.stats);
+    for (let i = 0; i < 4; i++) { await run(page, () => AP.tick(1000)); s = await shot(page, `p02l-hidden-${i}`); log('hidden', i, s.phase, s.guard); if (s.phase !== 'hidden') break; }
+    await run(page, () => PT.waitPhase('explain', 15000));
+    s = await shot(page, 'p02m-after-hide-card');
+    log('after hide', s.phase, s.player, s.stats, await cardText(page));
+    await ctx.close();
+  },
 };
 
 const want = (process.argv[2] ?? Object.keys(scenarios).join(',')).split(',');

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import type { Exhibit, Level, Prop, Shape, Target, V2, V3 } from './levels.ts';
 import { kWindow } from './rules.ts';
 import { localBounds, trianglePoints } from './shapes.ts';
+import { CASE_H, CASE_HALF, decorCases } from './decor.ts';
 import { Character, modelInBox, modelInstance } from './models.ts';
 import {
   bannerTexture,
@@ -297,6 +298,7 @@ export interface LevelView {
   guard: Character;
   raccoon: Character;
   pedestals: Map<string, THREE.Object3D>;
+  placards: Map<string, THREE.Mesh>;
   ventFans: THREE.Object3D[];
   sky: THREE.Texture;
 }
@@ -465,9 +467,43 @@ export function buildLevel(level: Level): LevelView {
   const moonbeams: THREE.Object3D[] = [];
   for (const p of level.props) root.add(buildProp(p, level, lasers, moonbeams));
 
+  // Display cases (decor; the sim has matching colliders).
+  for (const d of decorCases(level)) {
+    const g = new THREE.Group();
+    const w = CASE_HALF * 2;
+    g.add(boxAt([-CASE_HALF, 0, -CASE_HALF], [CASE_HALF, 0.95, CASE_HALF], M.wood()));
+    g.add(boxAt([-CASE_HALF - 0.03, 0.92, -CASE_HALF - 0.03], [CASE_HALF + 0.03, 0.97, CASE_HALF + 0.03], M.brass()));
+    const glassBox = new THREE.Mesh(new THREE.BoxGeometry(w, CASE_H - 0.97, w), M.glass());
+    glassBox.position.y = 0.97 + (CASE_H - 0.97) / 2;
+    g.add(glassBox);
+    for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) g.add(boxAt([x * CASE_HALF - 0.02, 0.97, z * CASE_HALF - 0.02], [x * CASE_HALF + 0.02, CASE_H, z * CASE_HALF + 0.02], M.brass()));
+    g.add(boxAt([-CASE_HALF - 0.02, CASE_H, -CASE_HALF - 0.02], [CASE_HALF + 0.02, CASE_H + 0.05, CASE_HALF + 0.02], M.brass()));
+    if (d.item === 'bust') {
+      const b = modelInstance('bust', 0.5);
+      b.position.y = 0.97;
+      g.add(b);
+    } else {
+      // A lathe vase or a big gem on a cushion.
+      const pts = d.item === 'vase' ? [[0.0, 0], [0.12, 0.02], [0.16, 0.18], [0.1, 0.38], [0.07, 0.46], [0.1, 0.52]] : [[0, 0], [0.15, 0.08], [0.0, 0.3]];
+      const lathe = mesh(new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), 20), d.item === 'vase' ? mat('porcelain', () => new THREE.MeshStandardMaterial({ color: '#e9edf5', roughness: 0.25, metalness: 0.05 })) : mat('gem', () => new THREE.MeshStandardMaterial({ color: '#4ad1ff', roughness: 0.05, metalness: 0.2, emissive: '#0a5a80', emissiveIntensity: 0.6, flatShading: true })));
+      lathe.position.y = 1.0;
+      g.add(lathe);
+      if (d.item === 'vase') {
+        const band = mesh(new THREE.TorusGeometry(0.155, 0.012, 6, 24), M.brass(), false);
+        band.rotation.x = Math.PI / 2;
+        band.position.y = 1.18;
+        g.add(band);
+      }
+    }
+    g.position.set(d.pos[0], 0, d.pos[1]);
+    g.rotation.y = d.yaw;
+    root.add(g);
+  }
+
   // Pedestals + exhibits + placards.
   const exhibitMeshes = new Map<string, THREE.Group>();
   const pedestals = new Map<string, THREE.Object3D>();
+  const placards = new Map<string, THREE.Mesh>();
   for (const ex of level.exhibits) {
     const mm = buildExhibitMesh(ex, ex.orientation ?? 0);
     exhibitMeshes.set(ex.id, mm);
@@ -504,6 +540,7 @@ export function buildLevel(level: Level): LevelView {
       plq.rotation.x = -0.35;
     }
     root.add(plq);
+    placards.set(ex.id, plq);
     // Warm spot on each exhibit.
     const spot = new THREE.SpotLight('#ffc874', 11, 9, 0.42, 0.6, 1.2);
     spot.position.set(ex.pos[0] + 0.5, Math.min(R.h - 0.2, 5), ex.pos[1] + 0.8);
@@ -680,7 +717,7 @@ export function buildLevel(level: Level): LevelView {
   const ventFans: THREE.Object3D[] = [];
   root.traverse((o) => { if (o.userData.fan) ventFans.push(o); });
 
-  return { root, exhibitMeshes, targets, exit, exitLight, hides, alarmLights, lamps, sun, hemi, lasers, moonbeams, guard, raccoon, pedestals, ventFans, sky };
+  return { root, exhibitMeshes, targets, exit, exitLight, hides, alarmLights, lamps, sun, hemi, lasers, moonbeams, guard, raccoon, pedestals, placards, ventFans, sky };
 }
 
 export function themeFog(level: Level): THREE.Color {
