@@ -71,6 +71,28 @@ const MUTATORS: Record<number, Mutator[]> = {
     },
   ],
   2: [
+    // Laser triangle: new pedestal height / distance → a new wall height, found by AA.
+    (L, r) => {
+      const [hp, a] = pick(r, [[1, 2], [1.2, 2], [0.8, 1.5], [1, 2.5], [1.2, 2.4], [0.9, 1.8]] as [number, number][]);
+      const H = (hp * 6) / a;
+      const m = pick(r, [0.4, 0.5, 0.6, 0.8]);
+      const k = H / m;
+      if (H > 4.4 || k > 8 || Math.abs(k - Math.round(k * 2) / 2) > 1e-9) return null;
+      const ex = L.exhibits[0];
+      if (ex.shape.type === 'mirror') ex.shape = { ...ex.shape, h: m };
+      ex.measures.height.value = m;
+      ex.placard = ['מראה עתיקה', `גובה ⟦${n(m)}⟧ מ'`];
+      L.targets[0].need = { measure: 'height', value: H };
+      L.props = L.props.map((p) => {
+        if (p.kind === 'solid' && p.mat === 'brass') return { ...p, min: [a, 0, -3.25], max: [a + 0.4, hp, -2.75] };
+        if (p.kind === 'laserBeam') return { ...p, to: [6, H, -3] };
+        if (p.kind === 'sign' && p.lines[0] === 'עמוד') return { ...p, pos: [a + 0.2, hp + 0.35, -2.7], lines: ['עמוד', `גובה ⟦${n(hp)}⟧ מ'`] };
+        return p;
+      });
+      L.hint = [`המשולש הקטן: ⟦${n(a)}⟧ על הרצפה, ⟦${n(hp)}⟧ גובה. הגדול: ⟦6⟧ על הרצפה. צלעות מתאימות.`];
+      setPad(L, 'mirror', pick(r, [0.6, 0.8, 1]));
+      return L;
+    },
     // Triangle sign into a similar frame, random orientations.
     (L, r) => {
       const fam = pick(r, [[3, 4, 5], [6, 8, 10], [5, 12, 13]] as [number, number, number][]);
@@ -170,7 +192,7 @@ const MUTATORS: Record<number, Mutator[]> = {
   ],
 };
 
-const TEMPLATES: Record<number, number[]> = { 1: [1, 4], 2: [8], 3: [13, 11], 4: [16, 17] };
+const TEMPLATES: Record<number, number[]> = { 1: [1, 4], 2: [7, 8], 3: [13, 11], 4: [16, 17] };
 
 /** Verify: solvable through the sim, and drop-at-2×-grab fails on every target. */
 export function verifyGenerated(L: Level): boolean {
