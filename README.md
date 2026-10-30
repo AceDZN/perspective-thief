@@ -1,5 +1,61 @@
 # גנב הפרספקטיבה — Perspective Thief
 
-A first-person 3D night heist in the Museum of Proportions, teaching grade-8 similarity (Israeli curriculum, Workbook grade 8 chapter 6). Grab an exhibit, carry it, drop it farther or closer: it keeps its on-screen size, so its real size scales by **k = d₂ / d₁**.
+A first-person 3D night heist in the surreal **Museum of Proportions**, teaching **grade-8 similarity** (Israeli curriculum as published in Workbook, grade 8 chapter 6). Your stolen antique lens keeps an exhibit's *on-screen* size, so when you grab it at distance **d₁** and drop it at **d₂**, every length is multiplied by the similarity ratio **k = d₂ ÷ d₁**. Perimeter scales by k, area by k², weight by k³ (World 4 extension). Compute where to stand, drop, and get away with it. Get it wrong and the exhibit crashes through the roof, the alarm whoops and a waddling night guard comes after you.
 
-Work in progress. See `docs/handoff/` for the build brief and `progress.md` for status.
+Hebrew RTL UI, Three.js, 18 authored levels in 5 halls, plus generated "surprise rooms" per hall after you clear it.
+
+## Run
+
+```bash
+npm install
+npm run dev        # http://localhost:5214  (strict port)
+npm test           # 57 unit tests: rules, all 18 levels solvable through the sim, misconception traps
+npm run build      # static build in dist/ (relative base, works offline)
+npm run preview    # http://localhost:4214
+npm run capture    # needs the dev server: plays scenarios in headless Chromium, saves screenshots
+```
+
+URL options: `?level=N` jumps into a level, `?unlock=all` unlocks the whole map (for teachers/testing).
+
+## Controls
+
+| | Desktop | Touch |
+|---|---|---|
+| Move | WASD (Shift = slow, for exact distances) | left-side stick |
+| Look | mouse (click to capture); arrows turn, Q/Z look up/down; click-drag if pointer lock is unavailable | drag on the right side |
+| Grab / drop | click or E | big "תפסו / הניחו" button |
+| Rotate a triangle | R or right click | ⟳ button |
+| Climb | Space, or keep walking into a ledge ≤ 1.6 m | keep pushing forward |
+| Hint (costs a star) · pause · mute · fullscreen | H · P/Esc · M · F | top-left buttons |
+
+The lens HUD shows the locked grab distance **d₁** and the live rangefinder distance **d**. It never shows k or the resulting size: placards give the exhibits' real sizes, brass plates give the targets' numbers, and brass floor rulers mark distances. Standing on a round grab pad snaps d₁ to the pad's exact value. Tolerance is ±2 % of k (some targets have physical slack), so eyeballing fails.
+
+## What's implemented
+
+- **18 authored levels** (`src/levels.ts`): Gallery of Lengths (1–5), Hall of Shadows (6–10, real shadow-casting light, AA similar triangles), Canvas & Carpet (11–15, perimeter k vs area k²), The Vault (16–17, k³ extension and congruence k = 1), and the no-hints rooftop finale at dawn (18) with a patrolling guard who only moves while you move. Each world ends in a transfer level. See `LEVELS.md` for every level's numbers and solution, and `CURRICULUM.md` for the Workbook module links.
+- **Pure math** in `src/rules.ts` (ratio, k windows for powers 1/2/3, drop verdicts, worked explanations, stars) and a **headless sim** in `src/sim.ts` (movement, aiming, grab/drop, consequences, guard, stealth). The Three.js scene only renders the sim.
+- **Consequences:** crash and roof-crash (alarm, guard chase, hide in a sarcophagus or get caught), fall-through, blown away by the vent fan, pocketed by the guard, too short, gap left, jam (wrong corresponding sides), not similar. Every mistake is recoverable and is followed by a worked-ratio card.
+- **Tripo 3D models** (`public/models/`, see `ASSETS.md`): rigged night guard (walk/run/look-around/scratch-head/fall), rigged raccoon accomplice (idle/greet/cheer), lens-in-glove view model, dinosaur crate, bust, statue, upright sarcophagus. Everything that carries a number is procedural and exact.
+- **3D level select** (a museum diorama on a planning table), stars and progress saved in `localStorage`, hints, pause, mute, reduced-motion, touch controls, Hebrew Rubik font bundled.
+- **Replay:** after a hall is cleared, "חדר חדש" builds a fresh room from that hall's templates with new numbers, verified by the solver (solvable, and the constant "drop at 2× grab" strategy fails).
+- **Learning log:** anonymous local events (level, d₁, d₂, k, needed k, outcome, hint used, attempt, first unaided decision) in `localStorage` (`perspective-thief:learn`); `window.learning_log()` returns them.
+- **Test hooks:** `window.render_game_to_text()` (full state as JSON) and `window.advanceTime(ms)` (deterministic steps, respects pause).
+
+## Planned / not done
+
+- More set dressing (display cases, richer ceilings and city backdrop) to match the mockups' density; see `docs/VISUAL_REVIEW.md`.
+- No teacher dashboard or server; the learning log stays on the device.
+- Not tested on real phones or with students yet; automation cannot measure fun or learning.
+
+## Measured
+
+- Production build: JS 875 KB (234 KB gzip), CSS 19 KB, models 5.9 MB total (`dist/` 7.2 MB). No runtime network requests beyond the static files.
+- Frame rate (`node tests/perf.mjs`, headless Chromium on this Mac's GPU): 60 fps at 1280×720 and 1920×1080 on levels 1, 6, 12 and 18. Not measured on phones.
+
+## Deploy to Vercel (when you want to)
+
+Static site, no server. In Vercel: **New Project → import `AceDZN/perspective-thief` → Framework preset "Vite"** (build `npm run build`, output `dist`). The relative `base: './'` also lets it live under a sub-path (e.g. inside math-games.workbook.co.il) or in an iframe; the canvas fills whatever container it is given. Not deployed yet.
+
+## Docs
+
+`GAME_IDENTITY.md` · `LEVELS.md` · `CURRICULUM.md` · `ASSETS.md` · `PLAYTEST.md` · `progress.md` · `docs/visual-targets/` (mockups + prompts) · `docs/VISUAL_REVIEW.md` · `docs/captures/` (real gameplay screenshots) · `docs/handoff/` (build brief).
