@@ -15,11 +15,12 @@ export interface MenuView {
 }
 
 // Hall rectangles on the table (x0, z0, x1, z1) and their floor tint.
+// Hebrew reads right to left: World 1 is the rightmost hall.
 const HALLS: Record<number, { r: [number, number, number, number]; floor: string; wall: string }> = {
-  1: { r: [-9, -1, -4.2, 5], floor: 'white', wall: '#1d2a48' },
-  2: { r: [-4, -1, 0.8, 5], floor: 'grey', wall: '#3b2a1c' },
-  3: { r: [1, -1, 5.6, 5], floor: 'red', wall: '#4a1419' },
-  4: { r: [5.8, -1, 10, 5], floor: 'teal', wall: '#173c40' },
+  1: { r: [5.2, -1, 10, 5], floor: 'white', wall: '#1d2a48' },
+  2: { r: [0.2, -1, 5, 5], floor: 'grey', wall: '#3b2a1c' },
+  3: { r: [-4.6, -1, 0, 5], floor: 'red', wall: '#4a1419' },
+  4: { r: [-9, -1, -4.8, 5], floor: 'teal', wall: '#173c40' },
   5: { r: [-3, -6.5, 6, -1.6], floor: 'rose', wall: '#c9a58e' },
 };
 
@@ -66,19 +67,19 @@ export function buildMenu(): MenuView {
   }
   // Decorations.
   const put = (o: THREE.Object3D, x: number, z: number, y = 0.3, yaw = 0) => { o.position.set(x, y, z); o.rotation.y = yaw; scene.add(o); return o; };
-  put(modelInstance('statue', 1.6), -7.8, 0.4);
-  put(modelInstance('bust', 0.5), -5.2, 0.2, 0.3, 0.4);
-  put(modelInstance('dinoCrate', 1.0), -2.2, 0.6, 0.3, 0.3);
-  put(modelInstance('statue', 2.2), -0.3, 0.2, 0.3, -0.4);
+  put(modelInstance('statue', 1.6), 8.6, 0.4);
+  put(modelInstance('bust', 0.5), 6.0, 0.2, 0.3, 0.4);
+  put(modelInstance('dinoCrate', 1.0), 3.6, 0.6, 0.3, 0.3);
+  put(modelInstance('statue', 2.2), 1.0, 0.2, 0.3, -0.4);
   const painting = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.95), new THREE.MeshStandardMaterial({ map: paintingTexture('cat'), roughness: 0.6 }));
-  put(painting, 3.3, -0.83, 1.0);
+  put(painting, -2.3, -0.83, 1.0);
   const frame = boxAt([-0.78, -0.55, -0.04], [0.78, 0.55, 0], M.gold());
-  put(frame, 3.3, -0.85, 1.0);
-  put(modelInstance('sarcophagus', 0.45), 8.9, 0.3, 0.3, 0.2);
+  put(frame, -2.3, -0.85, 1.0);
+  put(modelInstance('sarcophagus', 1.1), -8.3, 0.3, 0.3, 0.2);
   const vault = new THREE.Mesh(new THREE.TorusGeometry(0.7, 0.12, 10, 32), M.brass());
-  put(vault, 7.6, -0.83, 1.0);
+  put(vault, -6.4, -0.83, 1.0);
   const gold = buildExhibitMesh({ shape: { type: 'box', w: 0.5, h: 0.5, d: 0.5, look: 'gold' } });
-  put(gold, 8.6, 2.6);
+  put(gold, -5.6, 2.6);
   for (const [x, z] of [[-2, -5.6], [4.8, -5.6], [-2, -2.4], [4.6, -2.4]] as [number, number][]) {
     put(buildExhibitMesh({ shape: { type: 'box', w: 0.7, h: 0.35, d: 0.7, look: 'planter' } }), x, z);
   }
@@ -92,11 +93,10 @@ export function buildMenu(): MenuView {
     const [x0, z0, x1, z1] = HALLS[wid].r;
     ids.forEach((id, i) => {
       const t = ids.length === 1 ? 0.5 : i / (ids.length - 1);
-      let x = x0 + 0.7 + t * (x1 - x0 - 1.4);
-      let z = z1 - 1.3 - Math.sin(t * Math.PI) * (z1 - z0 - 2.6) * 0.55;
+      // Right to left inside each hall, zig-zagging between two rows.
+      let x = x1 - 0.8 - t * (x1 - x0 - 1.6);
+      let z = i % 2 ? z0 + 2.0 : z1 - 1.2;
       if (wid === 5) { x = (x0 + x1) / 2; z = (z0 + z1) / 2; }
-      // Hebrew reads right-to-left: number 1 on the right of each hall.
-      x = x0 + x1 - x;
       nodePos.set(id, new THREE.Vector3(x, 0.42, z));
     });
   }
@@ -143,8 +143,8 @@ export function buildMenu(): MenuView {
   const sc = moon.shadow.camera as THREE.OrthographicCamera;
   sc.left = -16; sc.right = 16; sc.top = 12; sc.bottom = -12;
   scene.add(moon);
-  const desk = new THREE.PointLight('#ffb050', 30, 30, 1.5);
-  desk.position.set(-10, 6, 7);
+  const desk = new THREE.PointLight('#ffb050', 12, 30, 1.5);
+  desk.position.set(-12, 7, 9);
   scene.add(desk);
 
   let t = 0;

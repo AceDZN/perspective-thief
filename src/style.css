@@ -181,7 +181,11 @@ body.touch .chip { bottom: auto; top: 120px; right: 16px; }
 #lfill { height: 100%; width: 0; background: var(--gold); transition: width 0.2s; }
 
 @container (max-width: 700px) {
-  .tr { min-width: 0; max-width: 58cqw; padding: 8px 10px; }
+  .tr { min-width: 0; max-width: none; left: 8px; right: 8px; top: 52px; padding: 6px 10px; }
+  .obj { padding-top: 4px; }
+  .lvlname { padding-bottom: 4px; }
+  body.touch .chip { top: auto; bottom: 150px; right: 8px; left: auto; }
+  #lensHud { bottom: 6px; }
   .lvlname { font-size: 17px; }
   .obj { font-size: 13px; }
   .stars { font-size: 22px; }

@@ -33,8 +33,8 @@ export const M = {
   brass: () => mat('brass', () => new THREE.MeshStandardMaterial({ color: '#d4a94e', roughness: 0.28, metalness: 0.92 })),
   darkBrass: () => mat('darkBrass', () => new THREE.MeshStandardMaterial({ color: '#7a5a22', roughness: 0.4, metalness: 0.85 })),
   gold: () => mat('gold', () => new THREE.MeshStandardMaterial({ color: '#ffcf5a', roughness: 0.18, metalness: 1, emissive: '#5a3a00', emissiveIntensity: 0.4 })),
-  marble: () => mat('marble', () => new THREE.MeshStandardMaterial({ map: marbleTexture('white'), roughness: 0.25, metalness: 0.05 })),
-  stone: () => mat('stone', () => new THREE.MeshStandardMaterial({ map: marbleTexture('grey'), roughness: 0.7 })),
+  marble: () => mat('marble', () => new THREE.MeshStandardMaterial({ map: marbleTexture('white'), color: '#a9acb8', roughness: 0.3, metalness: 0.05 })),
+  stone: () => mat('stone', () => new THREE.MeshStandardMaterial({ map: marbleTexture('grey'), color: '#8a8c98', roughness: 0.7 })),
   wood: () => mat('wood', () => new THREE.MeshStandardMaterial({ map: woodTexture(true), roughness: 0.55 })),
   lightWood: () => mat('lightWood', () => new THREE.MeshStandardMaterial({ map: woodTexture(false), roughness: 0.65 })),
   crate: () => mat('crate', () => new THREE.MeshStandardMaterial({ map: crateTexture(), roughness: 0.8 })),
@@ -314,7 +314,7 @@ export function buildLevel(level: Level): LevelView {
   const fTex = floorTexture(R.theme).clone();
   fTex.wrapS = fTex.wrapT = THREE.RepeatWrapping;
   fTex.needsUpdate = true;
-  const floorMat = new THREE.MeshStandardMaterial({ map: fTex, roughness: roof ? 0.6 : 0.16, metalness: 0.08, envMapIntensity: 1.2 });
+  const floorMat = new THREE.MeshStandardMaterial({ map: fTex, roughness: roof ? 0.6 : 0.32, metalness: 0.05, envMapIntensity: 1.0 });
   const floorRects: [number, number, number, number][] = [];
   const pits = R.pits ?? [];
   if (pits.length) {
@@ -505,7 +505,7 @@ export function buildLevel(level: Level): LevelView {
     }
     root.add(plq);
     // Warm spot on each exhibit.
-    const spot = new THREE.SpotLight('#ffd08a', 14, 9, 0.45, 0.6, 1.2);
+    const spot = new THREE.SpotLight('#ffc874', 11, 9, 0.42, 0.6, 1.2);
     spot.position.set(ex.pos[0] + 0.5, Math.min(R.h - 0.2, 5), ex.pos[1] + 0.8);
     spot.target.position.set(ex.pos[0], ex.pedestal, ex.pos[1]);
     root.add(spot, spot.target);
@@ -532,8 +532,6 @@ export function buildLevel(level: Level): LevelView {
     const mid = (r.from + r.to) / 2;
     m.position.set(r.origin[0] + Math.sin(r.dir) * mid, 0.008, r.origin[1] + Math.cos(r.dir) * mid);
     m.receiveShadow = true;
-    // Rotate the strip 180° in its own plane so numbers read from the far end looking back.
-    m.rotateZ(Math.PI);
     root.add(m);
   }
 
@@ -594,11 +592,12 @@ export function buildLevel(level: Level): LevelView {
 
   // Lights.
   const sky = skyTexture(roof ? 'rooftop' : 'night');
-  const hemi = new THREE.HemisphereLight(roof ? '#ffd9c4' : '#5d78c8', roof ? '#6a4a5a' : '#1a1410', roof ? 1.2 : 0.75);
+  const shadowHall = R.theme === 'shadows';
+  const hemi = new THREE.HemisphereLight(roof ? '#ffd9c4' : shadowHall ? '#6a4a2a' : '#4a64b8', roof ? '#6a4a5a' : '#120e0a', roof ? 1.2 : shadowHall ? 0.35 : 0.8);
   root.add(hemi);
   const sunElev = ((level.sun?.elevation ?? 55) * Math.PI) / 180;
   const sunDir = level.sun?.shadowDir ?? 0.6;
-  const sun = new THREE.DirectionalLight(roof ? '#ffc79a' : level.sun ? '#ffcf8a' : '#9db8ff', roof ? 2.6 : level.sun ? 2.4 : 1.1);
+  const sun = new THREE.DirectionalLight(roof ? '#ffc79a' : level.sun ? '#ffcf8a' : '#8fb0ff', roof ? 2.6 : level.sun ? 3.4 : 1.9);
   const span = Math.max(W, D);
   const tgt = new THREE.Vector3(cx, 0, cz);
   sun.position.set(cx - Math.sin(sunDir) * Math.cos(sunElev) * span, Math.sin(sunElev) * span, cz - Math.cos(sunDir) * Math.cos(sunElev) * span);
@@ -611,12 +610,32 @@ export function buildLevel(level: Level): LevelView {
   sun.shadow.bias = -0.0004;
   sun.shadow.normalBias = 0.02;
   root.add(sun, sun.target);
+  if (shadowHall && level.sun) {
+    // The single low lamp the shadows come from (a brass searchlight high on the far wall).
+    const lampG = new THREE.Group();
+    const housing = mesh(new THREE.CylinderGeometry(0.35, 0.5, 0.7, 20), M.brass(), false);
+    housing.rotation.x = Math.PI / 2;
+    lampG.add(housing);
+    const glowS = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowSprite('#ffd27a'), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    glowS.scale.setScalar(2.6);
+    glowS.position.z = 0.4;
+    lampG.add(glowS);
+    // Back along the light direction from the room centre, kept inside the room.
+    const back = new THREE.Vector3(-Math.sin(sunDir) * Math.cos(sunElev), Math.sin(sunElev), -Math.cos(sunDir) * Math.cos(sunElev));
+    const dist = (R.h - 0.8) / Math.sin(sunElev);
+    const p0 = tgt.clone().addScaledVector(back, dist);
+    p0.x = Math.min(R.x1 - 0.6, Math.max(R.x0 + 0.6, p0.x));
+    p0.z = Math.min(R.z1 - 0.6, Math.max(R.z0 + 0.6, p0.z));
+    lampG.position.copy(p0);
+    lampG.lookAt(tgt);
+    root.add(lampG);
+  }
 
   const lamps: THREE.PointLight[] = [];
   if (!roof) {
     const lampPos: V3[] = [[R.x0 + 0.5, 2.4, cz - D / 4], [R.x1 - 0.5, 2.4, cz + D / 4], [cx, R.h - 0.6, R.z0 + 1]];
     for (const p of lampPos) {
-      const l = new THREE.PointLight('#ffb35a', 6, 9, 1.6);
+      const l = new THREE.PointLight('#ffa64a', 5, 8, 1.6);
       l.position.set(p[0], p[1], p[2]);
       root.add(l);
       lamps.push(l);
@@ -1107,7 +1126,7 @@ function buildTarget(t: Target, level: Level, root: THREE.Group): TargetVisual {
 
   // Brass plate beside the target, facing into the room (local +z).
   const wallMounted = ['niche', 'vent', 'doorway', 'laserWall', 'frameTri', 'framePoly', 'window', 'keyhole'].includes(t.socket);
-  const plate = labelPlane(t.plate, 0.7, 'brass');
+  const plate = labelPlane(t.plate, 0.95, 'brass');
   const side = Math.max(w / 2, 0.45) + 0.55;
   const local = new THREE.Vector3(-side, wallMounted ? 1.55 - t.anchor[1] : 1.05 - t.anchor[1], wallMounted ? Math.max(0.02, b.min[2] + 0.02) : 0);
   if (t.socket === 'niche') local.set(-1.75 - 0.4, 2.1, -0.75);

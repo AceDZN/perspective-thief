@@ -12,6 +12,8 @@ export class Controls {
   private lookTouch = { id: -1, x: 0, y: 0 };
   sensitivity = 0.0022;
   locked = false;
+  private dragging: { x: number; y: number; moved: number } | null = null;
+  private dragFallback = false;
   touch = false;
   enabled = true;
   onKey: ((code: string) => void) | null = null;
@@ -34,8 +36,10 @@ export class Controls {
       if (this.touch) return;
       if (!this.enabled) return;
       if (!this.locked) {
-        el.requestPointerLock?.();
-        // The first click only captures the mouse.
+        // The first click only captures the mouse. Where pointer lock is unavailable (some
+        // iframes), click-drag looks around and a click without dragging grabs/drops.
+        this.dragging = { x: e.clientX, y: e.clientY, moved: 0 };
+        try { const r = el.requestPointerLock?.() as unknown as Promise<void> | undefined; r?.catch?.(() => undefined); } catch { /* unavailable */ }
         return;
       }
       if (e.button === 0) this.actQ = true;
@@ -45,7 +49,21 @@ export class Controls {
     document.addEventListener('pointerlockchange', () => {
       this.locked = document.pointerLockElement === el;
     });
+    window.addEventListener('mouseup', () => {
+      if (this.dragging && !this.locked && this.dragging.moved < 6 && this.dragFallback) this.actQ = true;
+      this.dragging = null;
+    });
+    document.addEventListener('pointerlockerror', () => { this.dragFallback = true; });
     document.addEventListener('mousemove', (e) => {
+      if (this.dragging && !this.locked && this.enabled) {
+        const dx = e.clientX - this.dragging.x, dy = e.clientY - this.dragging.y;
+        this.dragging.moved += Math.abs(dx) + Math.abs(dy);
+        this.dragging.x = e.clientX;
+        this.dragging.y = e.clientY;
+        this.lookDX += dx * 1.4;
+        this.lookDY += dy * 1.4;
+        return;
+      }
       if (!this.locked || !this.enabled) return;
       this.lookDX += e.movementX;
       this.lookDY += e.movementY;

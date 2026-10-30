@@ -81,7 +81,7 @@ renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.15;
+renderer.toneMappingExposure = 1.12;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const camera = new THREE.PerspectiveCamera(70, 16 / 9, 0.03, 400);
@@ -91,7 +91,7 @@ const overlayScene = new THREE.Scene();
 const pmrem = new THREE.PMREMGenerator(renderer);
 const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 scene.environment = envTex;
-scene.environmentIntensity = 0.5;
+scene.environmentIntensity = 0.22;
 overlayScene.environment = envTex;
 overlayScene.environmentIntensity = 0.3;
 overlayScene.add(new THREE.HemisphereLight('#9fb4e8', '#2a1a10', 0.9));
@@ -149,6 +149,7 @@ let paused = false;
 let manual = false;
 let acc = 0;
 let cardKind: '' | 'tutorial' | 'fail' | 'win' = '';
+if (matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
 let reduced = save.reduced || matchMedia('(prefers-reduced-motion: reduce)').matches;
 document.body.classList.toggle('reduced', reduced);
 const STEP = 1 / 60;
@@ -186,16 +187,12 @@ scene.add(aimLine);
 function buildViewModel(): void {
   viewModel.clear();
   // Tripo "gloved hand holding a brass lens" (glass faces +z in the file, so turn it around).
-  lensModel = modelInstance('lensHand', 0.2);
+  lensModel = modelInstance('lensHand', 0.16);
   const inner = new THREE.Group();
   inner.add(lensModel);
   lensModel.position.y -= 0.1;
   inner.rotation.y = Math.PI;
   viewModel.add(inner);
-  // Emissive glass disc so the lens glows a little.
-  const glass = new THREE.Mesh(new THREE.CircleGeometry(0.028, 24), new THREE.MeshBasicMaterial({ color: '#8fd0ff', transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }));
-  glass.position.set(0, 0.005, -0.1);
-  viewModel.add(glass);
 }
 
 function makeSparkles(): THREE.Points {
@@ -230,7 +227,34 @@ function burst(at: THREE.Vector3, color: string, n: number, speed: number, size:
   worldFx.add(pts);
   bursts.push({ pts, vel, t: 0, life, gravity });
 }
+// Falling chunks (plaster, glass, wood) for crashes.
+interface Chunk { m: THREE.Mesh; v: THREE.Vector3; w: THREE.Vector3; t: number }
+const chunks: Chunk[] = [];
+const chunkMats = [new THREE.MeshStandardMaterial({ color: '#d8d2c4', roughness: 0.9 }), new THREE.MeshStandardMaterial({ color: '#bfe3ff', roughness: 0.05, transparent: true, opacity: 0.6 }), new THREE.MeshStandardMaterial({ color: '#7a5a32', roughness: 0.8 })];
+function debris(at: THREE.Vector3, n: number): void {
+  if (reduced) n = Math.ceil(n / 2);
+  for (let i = 0; i < n; i++) {
+    const s = 0.08 + Math.random() * 0.25;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(s, s * 0.4, s * (0.5 + Math.random())), chunkMats[i % 3]);
+    m.castShadow = true;
+    m.position.copy(at).add(new THREE.Vector3((Math.random() - 0.5) * 2, Math.random() * 0.5, (Math.random() - 0.5) * 2));
+    worldFx.add(m);
+    chunks.push({ m, v: new THREE.Vector3((Math.random() - 0.5) * 4, Math.random() * 3, (Math.random() - 0.5) * 4), w: new THREE.Vector3(Math.random() * 8, Math.random() * 8, Math.random() * 8), t: 0 });
+  }
+}
+function updateChunks(dt: number): void {
+  for (let i = chunks.length - 1; i >= 0; i--) {
+    const c = chunks[i];
+    c.t += dt;
+    c.v.y -= 12 * dt;
+    c.m.position.addScaledVector(c.v, dt);
+    if (c.m.position.y < 0.05) { c.m.position.y = 0.05; c.v.multiplyScalar(0.4); c.v.y = Math.abs(c.v.y) * 0.3; c.w.multiplyScalar(0.5); }
+    c.m.rotation.x += c.w.x * dt; c.m.rotation.y += c.w.y * dt; c.m.rotation.z += c.w.z * dt;
+    if (c.t > 4) { worldFx.remove(c.m); c.m.geometry.dispose(); chunks.splice(i, 1); }
+  }
+}
 function updateBursts(dt: number): void {
+  updateChunks(dt);
   for (let i = bursts.length - 1; i >= 0; i--) {
     const b = bursts[i];
     b.t += dt;
@@ -288,7 +312,7 @@ function showTutorial(l: Level): void {
   const lines = (l.tutorial ?? []).map((t) => `<p class="math">${html(t)}</p>`).join('');
   const ext = l.extension ? '<p class="stats">הרחבה — מעבר לתוכנית הליבה</p>' : '';
   showCard('tutorial', `<div class="tut"><h2>${html(l.title)}</h2>${ext}${lines}</div><div class="row"><button class="btn primary" id="tutGo">יאללה לשדוד</button></div>`);
-  $('tutGo').onclick = () => { hideCard(); canvas.requestPointerLock?.(); };
+  $('tutGo').onclick = () => { hideCard(); lockPointer(); };
 }
 
 function showFail(): void {
@@ -296,7 +320,7 @@ function showFail(): void {
   const f = sim.failure;
   const lines = f.lines.map((t, i) => `<p class="${i < 2 ? 'math' : ''}">${html(t)}</p>`).join('');
   showCard('fail', `<h2>אופס!</h2><p><b>${FAIL_TITLE[f.kind]}</b></p>${lines}<div class="row"><button class="btn primary retry" id="failGo" aria-label="נסו שוב">⟳</button></div><p class="stats">החפץ חזר לכן שלו. נסו שוב.</p>`);
-  $('failGo').onclick = () => { sim?.dismiss(); hideCard(); canvas.requestPointerLock?.(); };
+  $('failGo').onclick = () => { sim?.dismiss(); hideCard(); lockPointer(); };
 }
 
 function showWin(): void {
@@ -356,6 +380,13 @@ function setMuted(m: boolean): void {
   $('menuMute').textContent = m ? '🔇' : '🔊';
 }
 
+function lockPointer(): void {
+  try {
+    const r = canvas.requestPointerLock?.() as unknown as Promise<void> | undefined;
+    r?.catch?.(() => undefined);
+  } catch { /* unavailable: drag-to-look fallback */ }
+}
+
 // ─────────────── level lifecycle ───────────────
 function clearLevel(): void {
   if (view) {
@@ -369,6 +400,8 @@ function clearLevel(): void {
   outline.selectedObjects = [];
   for (const b of bursts) worldFx.remove(b.pts);
   bursts.length = 0;
+  for (const c of chunks) worldFx.remove(c.m);
+  chunks.length = 0;
   view = null;
   flushLearn(sim);
   sim = null;
@@ -527,11 +560,15 @@ controls.onKey = (code) => {
     else void app.requestFullscreen?.();
   }
 };
+let hadLock = false;
 document.addEventListener('pointerlockchange', () => {
-  if (!document.pointerLockElement && mode === 'play' && !cardKind && !paused && sim && sim.phase !== 'won' && !manual) showPause();
+  if (document.pointerLockElement) { hadLock = true; return; }
+  // Only an Esc that released a real lock pauses (a failed lock request, e.g. in an iframe, does not).
+  if (hadLock && mode === 'play' && !cardKind && !paused && sim && sim.phase !== 'won' && !manual) showPause();
+  hadLock = false;
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden && mode === 'play' && !paused && !cardKind) showPause();
+  if (document.hidden && mode === 'play' && !paused && !cardKind && !manual) showPause();
 });
 
 function useHint(): void {
@@ -580,7 +617,10 @@ function onEvent(e: GameEvent): void {
         audio.crash();
         shake = 0.35;
         burst(p.clone().add(new THREE.Vector3(0, 1, 0)), '#cfe8ff', 120, 6, 0.1, 9, 2);
-        if (e.kind === 'roofCrash') burst(new THREE.Vector3(p.x, level.room.h - 0.2, p.z), '#e8e0d0', 90, 3, 0.16, 9, 2.2);
+        if (e.kind === 'roofCrash') {
+          burst(new THREE.Vector3(p.x, level.room.h - 0.2, p.z), '#e8e0d0', 90, 3, 0.16, 9, 2.2);
+          debris(new THREE.Vector3(p.x, level.room.h - 0.3, p.z + 0.5), 14);
+        } else debris(p.clone().add(new THREE.Vector3(0, 0.8, 0.4)), 8);
         flash(0.35);
       } else if (e.kind === 'blownAway') audio.fan();
       else if (e.kind === 'jam' || e.kind === 'noFit') audio.jam();
@@ -821,7 +861,9 @@ function syncView(dt: number, realtime: boolean): void {
   // View model: lower right, bobbing; hidden while hiding/caught.
   viewModel.visible = phase !== 'hidden' && phase !== 'caught';
   const bob = reduced ? 0 : Math.sin(viewBob * Math.PI) * 0.008;
-  const vmLocal = new THREE.Vector3(0.21, -0.2 + bob, -0.42);
+  const portrait = camera.aspect < 1;
+  const vmLocal = portrait ? new THREE.Vector3(0.14, -0.3 + bob, -0.5) : new THREE.Vector3(0.23, -0.23 + bob, -0.42);
+  viewModel.scale.setScalar(portrait ? 0.7 : 1);
   viewModel.position.copy(vmLocal.applyQuaternion(camera.quaternion).add(camera.position));
   tmpQ.setFromEuler(new THREE.Euler(0.12, -0.22, 0.05));
   viewModel.quaternion.copy(camera.quaternion).multiply(tmpQ);
@@ -1011,6 +1053,7 @@ window.advanceTime = (ms: number) => {
   stepSim(controls.read(), steps);
   syncView(steps * STEP, false);
   updateHud();
+  composer.render(steps * STEP);
 };
 window.learning_log = () => [...learnBuffer, ...(sim?.log ?? [])];
 window.__pt = { startLevel, openMenu, get sim() { return sim; }, hideCard, resume };

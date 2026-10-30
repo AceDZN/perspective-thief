@@ -260,7 +260,7 @@ export const LEVELS: Level[] = [
     rulers: [{ origin: [5.55, 4], dir: -PI / 2, from: 0.5, to: 10 }],
     hides: [[-4.6, 7.2]],
     guardDoor: [0, -9],
-    exit: { pos: [5.4, 0, 4], r: 0.8 },
+    exit: { pos: [-5.4, 0, -6.5], r: 0.9 },
     hint: ['השוו את גובה הארגז ⟦3⟧ לגובה הפתח ⟦0.75⟧ — יחס אורכים, וזו הקטנה.'],
   },
   {

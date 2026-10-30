@@ -365,7 +365,9 @@ export function rulerTexture(from: number, to: number): THREE.CanvasTexture {
       g.beginPath(); g.moveTo(96, y); g.lineTo(96 - len, y); g.stroke();
       if (isM && mm > 0) {
         g.save();
-        g.translate(48, y - 2);
+        // Numbers read from the far end looking back toward 0 (where the player stands to drop).
+        g.translate(48, y + 2);
+        g.rotate(Math.PI);
         g.font = '700 40px Rubik, sans-serif';
         g.textAlign = 'center';
         g.textBaseline = 'bottom';
