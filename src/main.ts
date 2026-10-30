@@ -554,6 +554,7 @@ function enterLevel(l: Level): void {
   scene.add(view.root);
   scene.fog = l.room.theme === 'rooftop' ? new THREE.Fog(themeFog(l), 40, 120) : new THREE.FogExp2(themeFog(l), 0.035);
   scene.background = l.room.theme === 'rooftop' ? view.sky : themeFog(l);
+  scene.environmentIntensity = l.room.theme === 'rooftop' ? 0.08 : 0.22;
   exOrient.clear();
   solvedLaserOff.clear();
   successGlow = null;

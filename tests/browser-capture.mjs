@@ -240,6 +240,12 @@ const scenarios = {
     await page.screenshot({ path: `${out}/win-1.png` });
     await ctx.close();
   },
+  async shadow18() {
+    const { ctx, page } = await open(18);
+    await run(() => { AP.walkTo(11, 9, 0.2); AP.walkTo(11, 3.5, 0.2); AP.walkTo(8.6, 3.5, 0.1); AP.aimAt(7, 0, 6); })(page);
+    await shot(page, 'debug-shadow18');
+    await ctx.close();
+  },
   async mobile() {
     const { ctx, page } = await open(1, { width: 390, height: 844, touch: true });
     await run(() => { AP.aimAt(-2.5, 1.1, 0); })(page);

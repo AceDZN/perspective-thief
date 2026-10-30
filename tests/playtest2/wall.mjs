@@ -1,0 +1,21 @@
+// Pressing E while carrying and aiming at a wall/nothing: what happens?
+import { open, S, run, log, closeBrowser, OUT } from './lib.mjs';
+import { INSTALL } from './helpers.mjs';
+const { ctx, page } = await open('?unlock=all&level=1', { tag: 'wall' });
+await page.evaluate(() => window.advanceTime(16));
+await page.waitForTimeout(200);
+if (await page.isVisible('#tutGo')) await page.click('#tutGo');
+const info = await page.evaluate(INSTALL);
+const c = await run(page, (s) => PT2.grab(s), info[0]);
+log('grab', JSON.stringify(c));
+const a = await run(page, () => { AP.walkTo(0, 1.5, 0.05); AP.aimAt(-5, 2, 1.5); return { aim: AP.S().aim, carry: AP.S().carry, phase: AP.S().phase }; });
+log('before E', JSON.stringify(a));
+await page.screenshot({ path: `${OUT}/wall-aim.png` });
+await run(page, () => { AP.act(); AP.tick(100); });
+const s = await S(page);
+log('after E', JSON.stringify({ aim: s.aim, carry: s.carry, phase: s.phase, ex: s.exhibits[0], toast: await page.evaluate(() => document.getElementById('toast').innerText) }));
+await run(page, () => AP.aimAt(0, 0.5, 0));
+const s2 = await S(page);
+log('aim floor', JSON.stringify({ aim: s2.aim, carry: s2.carry }));
+await ctx.close();
+await closeBrowser();

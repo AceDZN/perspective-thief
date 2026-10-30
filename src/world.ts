@@ -320,7 +320,7 @@ export function buildLevel(level: Level): LevelView {
   const fTex = floorTexture(R.theme).clone();
   fTex.wrapS = fTex.wrapT = THREE.RepeatWrapping;
   fTex.needsUpdate = true;
-  const floorMat = new THREE.MeshStandardMaterial({ map: fTex, color: R.theme === 'shadows' ? '#a08a6c' : '#ffffff', roughness: roof ? 0.6 : 0.32, metalness: 0.05, envMapIntensity: 1.0 });
+  const floorMat = new THREE.MeshStandardMaterial({ map: fTex, color: R.theme === 'shadows' ? '#a08a6c' : roof ? '#b89a8c' : '#ffffff', roughness: roof ? 0.6 : 0.32, metalness: 0.05, envMapIntensity: 1.0 });
   const floorRects: [number, number, number, number][] = [];
   const pits = R.pits ?? [];
   if (pits.length) {
@@ -739,20 +739,21 @@ export function buildLevel(level: Level): LevelView {
   // Lights.
   const sky = skyTexture(roof ? 'rooftop' : 'night');
   const shadowHall = R.theme === 'shadows';
-  const hemi = new THREE.HemisphereLight(roof ? '#ffd9c4' : shadowHall ? '#6a4a2a' : '#4a64b8', roof ? '#6a4a5a' : '#120e0a', roof ? 1.2 : shadowHall ? 0.35 : 0.8);
+  const hemi = new THREE.HemisphereLight(roof ? '#ffd9c4' : shadowHall ? '#6a4a2a' : '#4a64b8', roof ? '#6a4a5a' : '#120e0a', roof ? 0.3 : shadowHall ? 0.35 : 0.8);
   root.add(hemi);
   const sunElev = ((level.sun?.elevation ?? 55) * Math.PI) / 180;
   const sunDir = level.sun?.shadowDir ?? 0.6;
-  const sun = new THREE.DirectionalLight(roof ? '#ffc79a' : level.sun ? '#ffcf8a' : '#8fb0ff', roof ? 2.6 : level.sun ? 3.4 : 1.9);
+  const sun = new THREE.DirectionalLight(roof ? '#ffc79a' : level.sun ? '#ffcf8a' : '#8fb0ff', roof ? 4.2 : level.sun ? 3.4 : 1.9);
   const span = Math.max(W, D);
   const tgt = new THREE.Vector3(cx, 0, cz);
   sun.position.set(cx - Math.sin(sunDir) * Math.cos(sunElev) * span, Math.sin(sunElev) * span, cz - Math.cos(sunDir) * Math.cos(sunElev) * span);
   sun.target.position.copy(tgt);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(roof ? 4096 : 2048, roof ? 4096 : 2048);
   const sc = sun.shadow.camera as THREE.OrthographicCamera;
   sc.left = -span * 0.75; sc.right = span * 0.75; sc.top = span * 0.75; sc.bottom = -span * 0.75;
   sc.near = 0.5; sc.far = span * 3;
+  sc.updateProjectionMatrix();
   sun.shadow.bias = -0.0008;
   sun.shadow.normalBias = 0.05;
   root.add(sun, sun.target);
