@@ -13,7 +13,7 @@
       for (let i = 0; i < 400; i++) {
         const d = wrap(yaw - S().player.yaw);
         if (Math.abs(d) < 0.006) break;
-        const fine = Math.abs(d) < 0.03;
+        const fine = Math.abs(d) < 0.04;
         if (fine) key('ShiftLeft', true);
         const code = d > 0 ? 'ArrowLeft' : 'ArrowRight';
         key(code, true); window.advanceTime(16); key(code, false);

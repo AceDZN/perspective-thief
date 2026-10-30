@@ -94,14 +94,14 @@ All numbers come from `src/levels.ts` and the solver (`src/solver.ts` `plan()`);
 - **Situation:** black out the moon window with a painting of the same shape.
 - **Given:** "ציור שמן · 0.6 × 0.4 מ'" (0.24 m²); "צוהר הירח · שטח 2.16 מ"ר · אותה צורה כמו הציור". Tutorial: lengths × k → area × k².
 - **Math:** 2.16 ÷ 0.24 = 9 = k² → k = 3 (1.8 × 1.2 m).
-- **Grab d₁ = 1.5 m → drop d₂ = 4.5 m**, window [4.41, 4.59] m.
-- **Wrong:** k = 9 → 13.5 m (a real spot: the hall was lengthened to z = 9 for this) → a 3.6 m painting → `roofCrash` + alarm + guard; too small → `gapLeft`.
+- **Grab d₁ = 1.2 m → drop d₂ = 3.6 m**, window [3.528, 3.672] m. (Pad moved from 1.5 m so that d₁ + k ≠ k · d₁.)
+- **Wrong:** k = 9 → 10.8 m (a real spot: the hall was lengthened to z = 9 for this) → a 3.6 m painting → `roofCrash` + alarm + guard; too small → `gapLeft`.
 
 ### 13 · שטיח על לוחית
 - **Given:** "שטיח פרסי · 1 × 0.5 מ'" (0.5 m²); "לוחית לחץ · שטח 2 מ"ר · אותה צורה כמו השטיח" (2 × 1 m outline).
 - **Math:** 2 ÷ 0.5 = 4 = k² → k = 2.
-- **Grab d₁ = 2 m → drop d₂ = 4 m**, window [3.92, 4.08] m.
-- **Wrong:** k = 4 → 8 m → `crash`; too small → `gapLeft`.
+- **Grab d₁ = 1.5 m → drop d₂ = 3 m**, window [2.94, 3.06] m. (Pad moved from 2 m so that d₁ + k ≠ k · d₁.)
+- **Wrong:** k = 4 → 6 m → `crash`; too small → `gapLeft`.
 
 ### 14 · שתי לוחיות (two targets, any order)
 - **Given:** "אדנית ריבועית · צלע 1.5 מ'" (perimeter 6) and "לולאת לייזר · היקף 12 מ'"; "שטיחון ריבועי · 0.5 × 0.5 מ'" (0.25 m²) and "לוחית לחץ ריבועית · שטח 4 מ"ר".
@@ -128,26 +128,26 @@ All numbers come from `src/levels.ts` and the solver (`src/solver.ts` `plan()`);
 - **Situation:** the lock takes only a key congruent to the original; you enlarged the key × 2 earlier.
 - **Given:** "המפתח הגנוב · אורך עכשיו 24 ס"מ · (הגדלתם אותו פי 2)"; "מנעול הכספת · רק מפתח חופף למקורי · מקורי: 12 ס"מ".
 - **Math:** 12 ÷ 24 = ½ → total ratio 2 × ½ = 1 (חפיפה).
-- **Grab d₁ = 4 m → drop d₂ = 2 m**, window [1.96, 2.04] m.
-- **Wrong:** × 2 again (8 m, 48 cm key) → `crash`; k = 1 (4 m, still 24 cm) → `crash`; too small → `fallThrough`.
+- **Grab d₁ = 3 m → drop d₂ = 1.5 m**, window [1.47, 1.53] m. (Pad moved from 4 m so that "subtract 2" (d₁ − 2 = 1) no longer lands on the answer.)
+- **Wrong:** × 2 again (6 m, 48 cm key) → `crash`; k = 1 (3 m, still 24 cm) → `crash`; d₁ − 2 = 1 m → `fallThrough`; too small → `fallThrough`.
 
 ## Finale
 
 ### 18 · היציאה הגדולה (no hints, patrolling guard, dawn rooftop)
 Three targets unlock in order.
 1. **Tower** — sun elevation atan(1.5 / 2) = 36.87°, shadows toward −x. Sign "אובליסק · גובה 1.5 מ'"; rulers read the obelisk's shadow (2 m) and the tower's (12 m, from its west face). 1.5 / 2 = h / 12 → h = 9 m; "סולם · גובה 1.5 מ'" → k = 6. **d₁ = 1 → d₂ = 6 m** ([5.88, 6.12]). Wrong: mismatched pair / short → `tooShort` or `crash`.
-2. **Billboard in front of the camera** — "באנר · 0.5 × 0.4 מ'" (0.2 m²) → "שטח 1.8 מ"ר · אותה צורה כמו הבאנר": 1.8 ÷ 0.2 = 9 = k² → k = 3. **d₁ = 1.5 → d₂ = 4.5 m** ([4.41, 4.59]). Wrong: k = 9 (13.5 m) → `crash`.
+2. **Billboard in front of the camera** — "באנר · 0.5 × 0.4 מ'" (0.2 m²) → "שטח 1.8 מ"ר · אותה צורה כמו הבאנר": 1.8 ÷ 0.2 = 9 = k² → k = 3. **d₁ = 1.2 → d₂ = 3.6 m** ([3.528, 3.672]). Wrong: k = 9 (10.8 m) → `crash`.
 3. **Laser loop** — "ארגז · בסיס ריבועי · צלע 0.5 מ'" (perimeter 2) → "היקף 5 מ'": k = 2.5. **d₁ = 2 → d₂ = 5 m** ([4.9, 5.1]). Wrong: k = √2.5 → `gapLeft`.
 
 ## Bypass checks (from `tests/traps.test.ts`)
 
 - **Eyeballing:** ±5 % and ±10 % of the exact k fail on all 19 default-tolerance targets. Level 3 rejects ±5 % too; level 2's handoff slack (±0.05 m on 0.75 m) accepts ±5 %.
 - **Constant multiples of the grab distance** (21 targets): × 1 wins 0; × 1.5 wins 1 (4); × 2 wins 3 (8, 13, 14-loop); × 2.5 wins 2 (3, 18-loop); × 3 wins 7 (1, 9, 11, 12, 15, 16, 18-billboard); × 4 wins 3 (5, 6, 14-plate). No constant wins a multi-target level; "drop at 2 × grab" wins whole levels 8 and 13 only.
-- **d₂ = d₁ + k** fails on 18 of 21 targets; it wins on 12, 13 and 18-billboard (d₁ = k / (k − 1)).
+- **d₂ = d₁ + k** fails on all 21 targets (after the pad moves on 12, 13, 17 and 18-billboard).
 
 ## Known weak spots (for the lead)
 
 - **× 3 is over-represented:** "always drop at 3 × grab" clears 7 of 21 targets and whole levels 1, 9, 11, 12, 15, 16. Varying a few k values (e.g. loop 12 → 10 m in level 11, k = 2.5) would cut it.
-- **Additive coincidences** on 12 (d₁ 1.5, k 3), 13 (d₁ 2, k 2) and 18-billboard (d₁ 1.5, k 3). Moving those pads (e.g. 12 → d₁ 1.2, 13 → d₁ 1.5, 18 banner → d₁ 1.2) fixes it but changes drop distances that `tests/levels.test.ts` pins (4.5, 4, 4.5), so it was not done.
-- **Level 17's subtraction bypass:** with d₁ = 4, "subtract 2" (4 − 2 = 2) lands on the right spot for the wrong reason — the level text itself names "מחסירים" as its misconception. d₁ = 3 (d₂ = 1.5) or 5 (d₂ = 2.5) would separate them; `tests/levels.test.ts` pins 2 m, so not changed.
+- ~~Additive coincidences on 12, 13, 18-billboard~~ and ~~level 17's subtraction bypass~~: **fixed** by the lead (pads 12 → 1.2 m, 13 → 1.5 m, 18 banner → 1.2 m, 17 → 3 m); `tests/traps.test.ts` now allows no coincidence at all.
+- **× 3 stays over-represented** on purpose: those k values are the handoff's authored numbers (levels 1, 9, 11, 12, 15, 16). The constant strategy still never wins a multi-target level, never the finale, and costs stars on every level it fails.
 - **Level 16's k = 27** cannot be played (32.4 m > 16 m lens range in a 12 m vault), so the handoff's "k = 27 → roof crash" can't happen in game; the player who believes 27 walks to the wall and gets an ordinary crash.

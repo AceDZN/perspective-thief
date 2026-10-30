@@ -127,7 +127,7 @@ export class Controls {
     // Keyboard turning (arrows) and looking up/down (PageUp/PageDown or Q/Z) — playable without a mouse.
     const turn = (k.has('ArrowLeft') ? 1 : 0) - (k.has('ArrowRight') ? 1 : 0);
     const tilt = (k.has('PageUp') || k.has('KeyQ') ? 1 : 0) - (k.has('PageDown') || k.has('KeyZ') ? 1 : 0);
-    this.lookDX -= turn * 7 * (k.has('ShiftLeft') || k.has('ShiftRight') ? 0.35 : 1);
+    this.lookDX -= turn * 14 * (k.has('ShiftLeft') || k.has('ShiftRight') ? 0.2 : 1);
     this.lookDY -= tilt * 5;
     if (this.stick.id >= 0) {
       fwd = -this.stick.y;

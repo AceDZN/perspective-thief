@@ -163,7 +163,7 @@ body.touch .chip { bottom: auto; top: 120px; right: 16px; }
 .node.current { border-color: #fff1b0; box-shadow: 0 0 0 2px #000, 0 0 20px rgba(255, 215, 110, 0.95); animation: pulse 0.9s infinite alternate; }
 .node.sel { outline: 3px solid #fff; outline-offset: 2px; }
 .hall { position: absolute; transform: translate(-50%, -50%); padding: 6px 14px; border-radius: 8px; background: rgba(10, 8, 6, 0.85); border: 2px solid var(--gold2); font-weight: 700; font-size: 18px; white-space: nowrap; pointer-events: none; }
-.levelCard { position: absolute; right: 18px; bottom: 18px; width: min(360px, 40cqw); padding: 14px 18px; border-radius: 14px; background: var(--panel); border: 2px solid var(--gold2); pointer-events: auto; }
+.levelCard { position: absolute; left: 18px; bottom: 18px; width: min(360px, 40cqw); padding: 14px 18px; border-radius: 14px; background: var(--panel); border: 2px solid var(--gold2); pointer-events: auto; }
 .levelCard h3 { margin: 0 0 6px; font-size: 22px; }
 .levelCard p { margin: 4px 0; font-size: 15px; line-height: 1.4; color: rgba(244, 234, 210, 0.85); }
 .levelCard .cstars { font-size: 26px; color: var(--gold); }
@@ -173,7 +173,7 @@ body.touch .chip { bottom: auto; top: 120px; right: 16px; }
   position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); padding: 16px 44px; border-radius: 999px; font-size: 26px; font-weight: 800;
   background: linear-gradient(#2a1f0c, #120c04); color: var(--gold); border: 3px solid var(--gold); box-shadow: 0 0 24px rgba(255, 200, 80, 0.45), 0 8px 20px rgba(0, 0, 0, 0.7);
 }
-.note { position: absolute; left: 18px; bottom: 18px; font-size: 13px; color: rgba(244, 234, 210, 0.6); max-width: 30cqw; line-height: 1.4; }
+.note { position: absolute; right: 18px; bottom: 18px; text-align: left; font-size: 13px; color: rgba(244, 234, 210, 0.6); max-width: 30cqw; line-height: 1.4; }
 
 #loading { position: absolute; inset: 0; display: grid; place-content: center; gap: 14px; background: #05060c; z-index: 10; text-align: center; }
 .ltitle { font-size: 44px; font-weight: 800; color: var(--gold); }
@@ -200,7 +200,7 @@ body.touch .chip { bottom: auto; top: 120px; right: 16px; }
   .card h2 { font-size: 30px; }
   .card p { font-size: 16px; }
   .logo1 { font-size: 34px; } .logo2 { font-size: 28px; } .logoSub { font-size: 12px; }
-  .levelCard { width: 92cqw; right: 4cqw; bottom: 90px; padding: 10px 12px; }
+  .levelCard { width: 92cqw; left: 4cqw; bottom: 90px; padding: 10px 12px; }
   .levelCard h3 { font-size: 18px; }
   .continue { font-size: 20px; padding: 12px 28px; bottom: 16px; }
   .node { width: 36px; height: 36px; font-size: 15px; }

@@ -778,7 +778,11 @@ export class Sim {
           this.setPhase('hidden');
           G.mode = 'search';
           G.t = 0;
-          G.target = [h[0] + 1.6, h[1] + 0.6];
+          // The guard searches a couple of metres out from the sarcophagus, toward the room centre.
+          const R = this.level.room;
+          const cx = (R.x0 + R.x1) / 2 - h[0], cz = (R.z0 + R.z1) / 2 - h[1];
+          const cl = Math.hypot(cx, cz) || 1;
+          G.target = [h[0] + (cx / cl) * 2.3, h[1] + (cz / cl) * 2.3];
           this.events.push({ type: 'hide' });
         }
       });

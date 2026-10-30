@@ -318,7 +318,7 @@ function showTutorial(l: Level): void {
 function showFail(): void {
   if (!sim?.failure) return;
   const f = sim.failure;
-  const lines = f.lines.map((t, i) => `<p class="${i < 2 ? 'math' : ''}">${html(t)}</p>`).join('');
+  const lines = f.lines.map((t, i) => `<p class="${i < f.lines.length - 1 || f.lines.length < 3 ? 'math' : ''}">${html(t)}</p>`).join('');
   showCard('fail', `<h2>אופס!</h2><p><b>${FAIL_TITLE[f.kind]}</b></p>${lines}<div class="row"><button class="btn primary retry" id="failGo" aria-label="נסו שוב">⟳</button></div><p class="stats">החפץ חזר לכן שלו. נסו שוב.</p>`);
   $('failGo').onclick = () => { sim?.dismiss(); hideCard(); lockPointer(); };
 }
@@ -668,10 +668,13 @@ function syncView(dt: number, realtime: boolean): void {
   camera.rotation.set(P.pitch, P.yaw, 0);
   const alarmOn = phase === 'chase' || phase === 'hidden' || phase === 'caught' || (phase === 'consequence' && !!sim.failure?.alarm);
   if (phase === 'hidden' && sim.hideIdx >= 0) {
+    // Peek out through the slit at the front of the upright sarcophagus.
     const h = level.hides[sim.hideIdx];
-    camera.position.set(h[0], 1.15, h[1]);
+    const hv = view.hides[sim.hideIdx];
+    const fy = hv ? hv.rotation.y : 0;
+    camera.position.set(h[0] + Math.sin(fy) * 0.42, 1.5, h[1] + Math.cos(fy) * 0.42);
     const g = sim.guard.pos;
-    camera.rotation.set(-0.05, Math.atan2(-(g[0] - h[0]), -(g[1] - h[1])), 0);
+    camera.rotation.set(-0.08, Math.atan2(-(g[0] - camera.position.x), -(g[1] - camera.position.z)), 0);
   }
   if (phase === 'caught') {
     const g = sim.guard.pos;

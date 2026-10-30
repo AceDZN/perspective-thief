@@ -143,7 +143,7 @@ export function buildMenu(): MenuView {
   const sc = moon.shadow.camera as THREE.OrthographicCamera;
   sc.left = -16; sc.right = 16; sc.top = 12; sc.bottom = -12;
   scene.add(moon);
-  const desk = new THREE.PointLight('#ffb050', 12, 30, 1.5);
+  const desk = new THREE.PointLight('#ffb050', 5, 30, 1.5);
   desk.position.set(-12, 7, 9);
   scene.add(desk);
 
