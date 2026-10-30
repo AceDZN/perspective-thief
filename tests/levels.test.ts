@@ -37,7 +37,7 @@ test('level 1 numbers: grab at 2 m, drop at 6 m (k = 3)', () => {
 });
 
 test('handoff drop distances', () => {
-  const want: Record<number, number[]> = { 1: [6], 2: [2], 4: [3.6], 5: [6], 6: [6], 7: [6], 8: [3], 10: [5], 11: [6], 12: [4.5], 13: [4], 14: [3, 6], 15: [2.4], 16: [3.6], 17: [2], 18: [6, 4.5, 5] };
+  const want: Record<number, number[]> = { 1: [6], 2: [2], 4: [3.6], 5: [6], 6: [6], 7: [6], 8: [3], 10: [5], 11: [6], 12: [3.6], 13: [3], 14: [3, 6], 15: [2.4], 16: [3.6], 17: [1.5], 18: [6, 3.6, 5] };
   for (const [id, ds] of Object.entries(want)) {
     const p = plan(LEVELS[Number(id) - 1]);
     assert.deepEqual(p.map((s) => Math.round(s.d2 * 1000) / 1000), ds, `level ${id}`);

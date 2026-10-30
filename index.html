@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#0a1022" />
+    <title>גנב הפרספקטיבה — Perspective Thief</title>
+    <meta name="description" content="משחק שוד תלת־ממדי במוזיאון הפרופורציות: לומדים יחס דמיון (כיתה ח׳) בעזרת עדשה גנובה." />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game" tabindex="0" aria-label="משחק גנב הפרספקטיבה"></canvas>
+      <div id="vignette"></div>
+      <div id="slit"></div>
+      <div id="flash"></div>
+      <div id="hud" hidden>
+        <div class="tl">
+          <div class="stars" id="hudStars" aria-label="כוכבים"></div>
+          <button class="pill" id="btnHint" title="רמז (H)"><span class="ico">💡</span><span>רמז</span></button>
+          <button class="round" id="btnPause" title="השהיה (P)" aria-label="השהיה">❚❚</button>
+          <button class="round" id="btnMute" title="השתקה (M)" aria-label="השתקה">🔊</button>
+        </div>
+        <div class="tr panel" id="levelPanel">
+          <div class="lvlname" id="lvlName"></div>
+          <div class="obj"><span class="diamond">◆</span><span id="lvlObj"></span></div>
+          <div class="hintbox" id="hintBox" hidden></div>
+        </div>
+        <div id="crosshair"></div>
+        <div id="lensHud">
+          <div class="bezel">
+            <div class="d1" id="hudD1"></div>
+            <div class="sep"></div>
+            <div class="d" id="hudD"></div>
+            <div class="aimtag" id="hudAim"></div>
+          </div>
+        </div>
+        <div class="chip" id="prompt"></div>
+        <div id="toast"></div>
+        <button id="hideChip" class="hidechip" hidden><span class="ico">🏺</span><span>מחבוא</span></button>
+        <div id="touchUi">
+          <div id="stick"><div id="knob"></div></div>
+          <button id="tAct" class="tbtn big">תפסו</button>
+          <button id="tRot" class="tbtn" hidden>⟳ סובבו</button>
+          <button id="tClimb" class="tbtn" hidden>טפסו</button>
+        </div>
+      </div>
+      <div id="card" class="card" hidden></div>
+      <div id="overlay" class="overlay" hidden></div>
+      <div id="menu" hidden>
+        <div class="mtl"><div class="pillbox"><span class="star">★</span><span id="menuStars"></span></div><button class="round" id="menuMute" aria-label="השתקה">🔊</button><button class="round" id="menuMotion" title="הפחתת תנועה" aria-label="הפחתת תנועה">◎</button></div>
+        <div class="logo"><div class="logo1">גנב</div><div class="logo2">הפרספקטיבה</div><div class="logoSub">שוד במוזיאון הפרופורציות</div></div>
+        <div id="nodes"></div>
+        <div id="halls"></div>
+        <div class="levelCard" id="levelCard"></div>
+        <button class="continue" id="btnContinue"></button>
+        <div class="note" id="menuNote"></div>
+      </div>
+      <div id="loading"><div class="ltitle">גנב הפרספקטיבה</div><div class="lbar"><div id="lfill"></div></div><div id="ltext">טוען את המוזיאון…</div></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

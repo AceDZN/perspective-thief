@@ -459,10 +459,11 @@ export class Sim {
       const attempt = (this.attempts.get(t.id) ?? 0) + 1;
       this.attempts.set(t.id, attempt);
       if (t.accepts !== ex.def.id) {
-        const m = ex.def.measures[Object.keys(ex.def.measures)[0]];
-        const lines = [`${t.name} מיועד ל${this.ex(t.accepts)?.def.name ?? 'חפץ אחר'}, לא ל${ex.def.name}.`];
-        this.learn({ action: 'drop', exId: ex.def.id, targetId: t.id, d1, d2, k, outcome: 'wrongExhibit', attempt });
-        void m;
+        // A piece that is not similar to this frame never fits, whatever k is.
+        const lines = ex.def.similar === false
+          ? [`השתמשת ב־⟦k = ${round(d2)} ÷ ${round(d1)} = ${round(k)}⟧`, 'הצורה הזאת לא דומה למסגרת: הזוויות והצלעות שלה לא מתאימות, ולכן אין ⟦k⟧ שיתאים. שטח שווה לא אומר דמיון.']
+          : ['זה לא החפץ שמתאים למטרה הזאת. נסו חפץ אחר.'];
+        this.learn({ action: 'drop', exId: ex.def.id, targetId: t.id, d1, d2, k, outcome: ex.def.similar === false ? 'notSimilar' : 'wrongExhibit', attempt });
         return this.startFail({ kind: 'noFit', exId: ex.def.id, targetId: t.id, d1, d2, lines, newScale, point: [...t.anchor] as V3, yaw: t.yaw, alarm: false });
       }
       const measure = ex.def.measures[t.measure];

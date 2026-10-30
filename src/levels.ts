@@ -153,7 +153,7 @@ export const LEVELS: Level[] = [
     id: 1,
     world: 1,
     title: 'הרמה ראשונה',
-    objective: "הניחו את הקובייה בגומחה שגובהה 1.5 מ', וטפסו ליציאה",
+    objective: "הניחו את הקובייה בגומחה שגובהה ⟦1.5 מ'⟧, וטפסו ליציאה",
     tutorial: [
       'העדשה הגנובה שומרת על הגודל שאתם רואים — לא על הגודל האמיתי.',
       'תופסים חפץ ממרחק ⟦d₁⟧ ומניחים ממרחק ⟦d₂⟧: כל אורך מוכפל ביחס הדמיון ⟦k = d₂ ÷ d₁⟧.',
@@ -172,8 +172,8 @@ export const LEVELS: Level[] = [
         pos: [-2.5, 0],
         yaw: 0,
         pedestal: 1,
-        measures: { side: len(0.5, 'צלע') },
-        placard: ['קובייה עתיקה', "צלע ⟦0.5 מ'⟧"],
+        measures: { side: len(0.5, 'מקצוע') },
+        placard: ['קובייה עתיקה', "מקצוע ⟦0.5 מ'⟧"],
       },
     ],
     targets: [
@@ -208,7 +208,7 @@ export const LEVELS: Level[] = [
     hides: [[3.8, 4.8]],
     guardDoor: [5, -1],
     exit: { pos: [0, 3, -6], r: 1.1 },
-    hint: ['השוו את צלע הקובייה ⟦0.5⟧ לגובה הגומחה ⟦1.5⟧ — זה יחס אורכים.', 'את המרחק ⟦d₁⟧ קובעים כשתופסים.'],
+    hint: ['השוו את מקצוע הקובייה ⟦0.5⟧ לגובה הגומחה ⟦1.5⟧ — זה יחס אורכים.', 'את המרחק ⟦d₁⟧ קובעים כשתופסים.'],
   },
   {
     id: 2,
@@ -323,8 +323,8 @@ export const LEVELS: Level[] = [
   {
     id: 4,
     world: 1,
-    title: 'מרחק עקום',
-    objective: "החליפו את הפסל החסר: החיישן מצפה לפסל בגובה 0.9 מ'",
+    title: 'מרחק לא עגול',
+    objective: "הציבו פסל על הכן הריק: החיישן מצפה לפסל בגובה ⟦0.9 מ'⟧",
     modules: ['corresponding-sides-similarity', 'missing-lengths-proportion'],
     skill: 'k לא שלם (1.5) ומרחק תפיסה לא עגול',
     misconception: 'מוסיפים את ההפרש (2.4 + 0.3) במקום לכפול',
@@ -352,7 +352,7 @@ export const LEVELS: Level[] = [
         zone: { c: [0, 1.4, -4.5], h: [0.6, 0.6, 0.6] },
         measure: 'height',
         need: { measure: 'height', value: 0.9 },
-        plate: ['כן ריק · חיישן משקל', "גובה הפסל ⟦0.9 מ'⟧"],
+        plate: ['כן ריק · חיישן גובה', "גובה הפסל ⟦0.9 מ'⟧"],
         tooBig: 'crash',
         tooSmall: 'pocketed',
         success: 'open',
@@ -426,7 +426,10 @@ export const LEVELS: Level[] = [
     hides: [[-4.6, 4.6]],
     guardDoor: [0, -6.2],
     exit: { pos: [5.4, 0, -3], r: 0.9 },
-    hint: [],
+    hint: [
+      'איזו מידה של הפסל צריכה למלא את הפתח — הגובה או הרוחב? השוו את המידה הזאת למידה המתאימה של הדלת — יחס אורכים.',
+      'אחר כך בדקו את המידה השנייה: הפסל המוגדל חייב להיות נמוך מהתקרה.',
+    ],
     noHints: false,
   },
 
@@ -436,7 +439,10 @@ export const LEVELS: Level[] = [
     world: 2,
     title: 'מודדים בצל',
     objective: 'הציבו סולם שמגיע בדיוק לכתר שבראש הפסל',
-    tutorial: ['אותו פנס, אותו רגע: הגובה והצל יוצרים משולשים דומים (ז.ז.).', 'גובה ÷ צל זהה לבובה ולפסל.'],
+    tutorial: [
+      'קרני הירח מגיעות מקבילות, באותה זווית לכל החפצים. לכן הגובה והצל של כל חפץ יוצרים משולשים דומים (דמיון לפי ז.ז.).',
+      'גובה מתאים לגובה, צל מתאים לצל: ⟦גובה ÷ צל⟧ זהה לבובה ולפסל.',
+    ],
     modules: ['real-life-similarity', 'similar-triangles-aa', 'missing-lengths-proportion'],
     skill: 'מציאת גובה בעזרת צללים (משולשים דומים), ואז k',
     misconception: 'משווים צל לגובה של חפץ אחר (צלעות לא מתאימות)',
@@ -475,6 +481,7 @@ export const LEVELS: Level[] = [
     pads: [{ forId: 'ladder', pos: [-4, 6.5], d: 1.5 }],
     props: [
       { kind: 'mannequin', pos: [-4, -3], h: 1.6 },
+      { kind: 'sign', pos: [-4.65, 1.2, -3], yaw: 0, lines: ['בובה', "גובה ⟦1.6 מ'⟧"], w: 0.7 },
       { kind: 'model', model: 'statue', pos: [2.5, 0, -6], h: 7.2, yaw: 0 },
     ],
     rulers: [
@@ -536,7 +543,10 @@ export const LEVELS: Level[] = [
     hides: [[-4.6, -1.5]],
     guardDoor: [-6, 1],
     exit: { pos: [5.4, 0, 4], r: 0.9 },
-    hint: ['המשולש הקטן: ⟦2⟧ על הרצפה, ⟦1⟧ גובה. הגדול: ⟦6⟧ על הרצפה, גובה? צלעות מתאימות.'],
+    hint: [
+      'המשולש הקטן: ⟦2⟧ על הרצפה, ⟦1⟧ גובה. הגדול: ⟦6⟧ על הרצפה, גובה? רצפה מול רצפה, גובה מול גובה — צלעות מתאימות.',
+      'אחר כך: יחס אורכים בין גובה המראה לגובה שמצאתם.',
+    ],
   },
   {
     id: 8,
@@ -585,13 +595,13 @@ export const LEVELS: Level[] = [
     hides: [[-3.8, 4.2]],
     guardDoor: [5, -2],
     exit: { pos: [-4.4, 0, 0], r: 0.9 },
-    hint: ['השוו צלע מתאימה לצלע מתאימה: הקצרה ⟦30⟧ מול הקצרה ⟦60⟧. ⟦R⟧ מסובב את השלט.'],
+    hint: ['השוו צלע מתאימה לצלע מתאימה: הקצרה ⟦30⟧ מול הקצרה ⟦60⟧ — יחס אורכים. מקש ⟦R⟧ (או כפתור הסיבוב) מסובב את השלט.'],
   },
   {
     id: 9,
     world: 2,
     title: 'רמפה למרפסת',
-    objective: 'הפכו את הרמפה הקטנה לדרך עד המרפסת — והיא חייבת להיכנס באולם',
+    objective: 'הפכו את הרמפה הקטנה לדרך עד המרפסת — והיא צריכה להיכנס לאורך האולם',
     modules: ['similar-triangles-aa', 'corresponding-sides-similarity'],
     skill: 'משולש ישר זווית דומה: גובה מול גובה, ובדיקה שהבסיס נכנס',
     misconception: 'מתאימים את אורך הרמפה לגובה המרפסת',
@@ -605,8 +615,8 @@ export const LEVELS: Level[] = [
         pos: [-4, 0],
         yaw: 0,
         pedestal: 0,
-        measures: { rise: len(0.5, 'גובה'), run: len(2, 'אורך') },
-        placard: ['רמפה', "אורך ⟦2 מ'⟧ · גובה ⟦0.5 מ'⟧"],
+        measures: { rise: len(0.5, 'גובה'), run: len(2, 'בסיס') },
+        placard: ['רמפה', "בסיס ⟦2 מ'⟧ · גובה ⟦0.5 מ'⟧"],
       },
     ],
     targets: [
@@ -626,7 +636,8 @@ export const LEVELS: Level[] = [
         socket: 'balcony',
       },
     ],
-    pads: [{ forId: 'ramp', pos: [-2.5, 0], d: 1.5 }],
+    // d₁ = 2 (not 1.5): with 1.5 the wrong additive rule d₂ = d₁ + k gives 4.5 = 1.5 × 3 and wins.
+    pads: [{ forId: 'ramp', pos: [-2, 0], d: 2 }],
     props: [
       { kind: 'solid', min: [-6, 0, -6], max: [6, 1.5, -3.5], mat: 'marble', walkable: true },
       { kind: 'sign', pos: [-2, 1.4, 2.95], yaw: PI, lines: ['אורך האולם', "⟦6.5 מ'⟧"], w: 1.2 },
@@ -636,12 +647,12 @@ export const LEVELS: Level[] = [
     hides: [[-5, 2]],
     guardDoor: [6, 0],
     exit: { pos: [1.5, 1.5, -5], r: 1 },
-    hint: ['גובה הרמפה ⟦0.5⟧ מול גובה המרפסת ⟦1.5⟧ — יחס אורכים. ודאו שהאורך החדש קטן מ־⟦6.5⟧.'],
+    hint: ['גובה הרמפה ⟦0.5⟧ מול גובה המרפסת ⟦1.5⟧ — יחס אורכים. ודאו שהבסיס החדש קצר מ־⟦6.5⟧.'],
   },
   {
     id: 10,
     world: 2,
-    title: 'משולשים מקוננים',
+    title: 'משולש בתוך משולש',
     objective: 'הציבו עמוד טיפוס שמגיע בדיוק למעקה המרפסת',
     modules: ['similar-triangles-aa', 'missing-lengths-proportion', 'real-life-similarity'],
     skill: 'העברה: משולש קטן בתוך גדול (קו מקביל) — בלי קווי עזר',
@@ -681,13 +692,19 @@ export const LEVELS: Level[] = [
     props: [
       { kind: 'solid', min: [-7, 0, -7], max: [7, 6, -5], mat: 'marble' },
       { kind: 'rope', from: [-3, 6, -5], to: [-3, 0, 3] },
+      // The banner itself: vertical, parallel to the balcony wall, 2 m from the rope's foot, its top
+      // touching the rope at 1.5 m (6 × 2/8). Without it the small triangle is not visible.
+      { kind: 'solid', min: [-3.3, 0, 0.98], max: [-2.7, 1.5, 1.02], mat: 'velvet' },
       { kind: 'sign', pos: [-3.6, 1.0, 1], yaw: 0, lines: ['באנר', "גובה ⟦1.5 מ'⟧"], w: 0.8 },
     ],
     rulers: [{ origin: [-3, 3], dir: PI, from: 0, to: 8 }],
     hides: [[5.6, -1.5]],
     guardDoor: [7, 2],
     exit: { pos: [-6.4, 0, -1], r: 0.9 },
-    hint: [],
+    hint: [
+      'יש כאן משולש קטן בתוך משולש גדול. השוו בסיס לבסיס — מכף החבל עד הבאנר, ומכף החבל עד הקיר — ובאותו יחס גובה הבאנר מול גובה המרפסת. יחס אורכים.',
+      'אחר כך: גובה העמוד מול הגובה שמצאתם — שוב יחס אורכים.',
+    ],
     noHints: false,
   },
 
@@ -748,7 +765,9 @@ export const LEVELS: Level[] = [
     modules: ['perimeter-area-ratio', 'similar-polygons'],
     skill: 'יחס שטחים = k², לכן k = √(יחס השטחים)',
     misconception: 'יחס שטחים = k (מניחים פי 9 במקום פי 3)',
-    room: { x0: -6, x1: 6, z0: -6, z1: 6, h: 4, theme: 'canvas' },
+    // z1 = 9 (not 6) so the k = 9 mistake is physically possible: d₂ = 9 × 1.5 = 13.5 m from the
+    // window must be a real standing spot, or the roof-crash can never happen.
+    room: { x0: -6, x1: 6, z0: -6, z1: 9, h: 4, theme: 'canvas' },
     spawn: { pos: [0, 5], yaw: 0 },
     exhibits: [
       {
@@ -779,7 +798,7 @@ export const LEVELS: Level[] = [
         socket: 'window',
       },
     ],
-    pads: [{ forId: 'painting', pos: [3.5, 4], d: 1.5 }],
+    pads: [{ forId: 'painting', pos: [3.5, 3.7], d: 1.2 }],
     props: [
       { kind: 'moonbeam', from: [0, 1.6, -5.95], to: [0, 0, -2], w: 1.8 },
       { kind: 'model', model: 'bust', pos: [-4.5, 1, -4], h: 0.6, yaw: 0.6 },
@@ -830,9 +849,10 @@ export const LEVELS: Level[] = [
         socket: 'plate',
       },
     ],
-    pads: [{ forId: 'rug', pos: [-3.5, 5], d: 2 }],
+    pads: [{ forId: 'rug', pos: [-3.5, 4.5], d: 1.5 }],
     props: [
-      { kind: 'laserLoop', min: [-1.45, -3.75], max: [1.45, -2.25], y: 0.06 },
+      // Outline of the 2 × 1 m (2 m²) plate, 5 cm margin like level 14 (was 2.9 × 1.5: wrong shape).
+      { kind: 'laserLoop', min: [-1.05, -3.55], max: [1.05, -2.45], y: 0.06 },
       { kind: 'model', model: 'statue', pos: [4.5, 0, -4.5], h: 2.2, yaw: -0.6 },
     ],
     rulers: [{ origin: [0, -3], dir: 0, from: 1, to: 8.5 }],
@@ -941,7 +961,7 @@ export const LEVELS: Level[] = [
         yaw: 0,
         pedestal: 1.1,
         measures: { area: area(50, 'שטח', 'cm2'), wall: len(4, 'צלע', 'cm') },
-        placard: ['זכוכית מחומשת', 'שטח ⟦50 סמ"ר⟧', 'צלע הקיר ⟦4 ס"מ⟧'],
+        placard: ['זכוכית מחומשת', 'שטח ⟦50 סמ"ר⟧', 'צלע אנכית ⟦4 ס"מ⟧'],
       },
       {
         id: 'rect',
@@ -984,7 +1004,10 @@ export const LEVELS: Level[] = [
     hides: [[3.6, 4.2]],
     guardDoor: [5, -2],
     exit: { pos: [-4.4, 0, 1], r: 0.9 },
-    hint: [],
+    hint: [
+      'קודם בדקו: איזו זכוכית דומה למסגרת — אותה צורה, לא רק אותו שטח?',
+      'אחר כך השוו את שטח הזכוכית לשטח המסגרת — זה יחס שטחים, כלומר ⟦k²⟧.',
+    ],
     noHints: false,
   },
 
@@ -993,8 +1016,8 @@ export const LEVELS: Level[] = [
     id: 16,
     world: 4,
     title: 'משקל המעלית',
-    objective: 'הפעילו את מעלית הכספת: היא זזה רק עם משקל של 54 ק"ג',
-    tutorial: ['הרחבה: נפח ומשקל גדלים פי ⟦k³⟧ — שלושה כיוונים.'],
+    objective: 'הפעילו את מעלית הכספת: היא זזה רק עם משקל של ⟦54 ק"ג⟧',
+    tutorial: ['הרחבה: כשכל אורך גדל פי ⟦k⟧, הנפח — וגם המשקל — גדלים פי ⟦k³⟧ (שלושה ממדים).'],
     modules: ['perimeter-area-ratio'],
     extension: true,
     skill: 'הרחבה: נפח ומשקל ביחס k³',
@@ -1010,7 +1033,7 @@ export const LEVELS: Level[] = [
         yaw: 0,
         pedestal: 1,
         measures: { weight: weight(2, 'משקל') },
-        placard: ['קוביית זהב', 'צלע ⟦20 ס"מ⟧ · ⟦2 ק"ג⟧'],
+        placard: ['קוביית זהב', 'מקצוע ⟦20 ס"מ⟧ · משקל ⟦2 ק"ג⟧'],
       },
     ],
     targets: [
@@ -1036,7 +1059,7 @@ export const LEVELS: Level[] = [
     hides: [[4, 3]],
     guardDoor: [-6, 0],
     exit: { pos: [5.4, 0, -2], r: 0.9 },
-    hint: ['משקל ⟦2⟧ מול משקל ⟦54⟧ — יחס נפחים = ⟦k³⟧.'],
+    hint: ['משקל הקובייה ⟦2⟧ מול המשקל הנדרש ⟦54⟧ — המשקל גדל כמו הנפח: יחס נפחים = ⟦k³⟧.'],
   },
   {
     id: 17,
@@ -1078,7 +1101,7 @@ export const LEVELS: Level[] = [
         socket: 'keyhole',
       },
     ],
-    pads: [{ forId: 'key', pos: [3, 4], d: 4 }],
+    pads: [{ forId: 'key', pos: [3, 3], d: 3 }],
     props: [
       { kind: 'model', model: 'sarcophagus', pos: [-4.6, 0, -4.4], h: 0.9, yaw: 0.5 },
       { kind: 'solid', min: [-1.8, 0, -6], max: [1.8, 3.2, -5.9], mat: 'steel' },
@@ -1087,7 +1110,7 @@ export const LEVELS: Level[] = [
     hides: [[-4.5, 3]],
     guardDoor: [6, 2],
     exit: { pos: [0, 0, -5.2], r: 0.9 },
-    hint: ['המפתח עכשיו פי ⟦2⟧ מהמקורי. איזה ⟦k⟧ מחזיר אותו ליחס ⟦1⟧?'],
+    hint: ['השוו את אורך המפתח עכשיו ⟦24⟧ לאורך המקורי ⟦12⟧ — יחס אורכים. איזה ⟦k⟧ מחזיר אותו ליחס ⟦1⟧ (חפיפה)?'],
   },
 
   // ───────────── Finale — the Grand Exit ─────────────
@@ -1186,7 +1209,7 @@ export const LEVELS: Level[] = [
     ],
     pads: [
       { forId: 'ladder', pos: [-6, 9], d: 1 },
-      { forId: 'banner', pos: [2, 10.5], d: 1.5 },
+      { forId: 'banner', pos: [2, 10.2], d: 1.2 },
       { forId: 'crate', pos: [9, 11], d: 2 },
     ],
     props: [

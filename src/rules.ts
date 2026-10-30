@@ -21,6 +21,7 @@ export type ConsequenceKind =
   | 'crash' // smashes a display case / wall: alarm + guard chase
   | 'roofCrash' // taller than the ceiling: crashes through the roof, alarm + chase
   | 'fallThrough' // too small: falls through the grate / into the gap
+  | 'tooShort' // too small: a ladder / pole / mirror / ramp / weight that doesn't reach
   | 'blownAway' // too small: the vent fan blows it away
   | 'pocketed' // too small: the guard pops in and pockets it
   | 'jam' // wrong orientation: wedges in the frame and drops out
@@ -141,7 +142,7 @@ export function explain(check: DropCheck, m: Measure, d1: number, d2: number): s
     return lines;
   }
   if (check.verdict === 'noFit') {
-    lines.push('הצורה הזאת לא דומה למסגרת: היחס בין הצלעות שלה שונה, ואין k שיתאים.');
+    lines.push('הצורה הזאת לא דומה למסגרת: הזוויות והצלעות שלה לא מתאימות לשל המסגרת, ולכן אין ⟦k⟧ שיתאים. שטח שווה לא אומר דמיון.');
     return lines;
   }
   lines.push(`היה צריך ⟦k = ${fmt(check.kNeeded)}⟧ · ${powerName(m.power)}${m.power === 1 ? '' : ` = ⟦k${m.power === 2 ? '²' : '³'}⟧`}`);
