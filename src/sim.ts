@@ -18,8 +18,8 @@ export const GUARD_CHASE = 1.9;
 export const GUARD_PATROL = 1.1;
 export const HIDE_R = 1.0;
 export const CATCH_R = 0.85;
-export const VISION_R = 7;
-export const VISION_HALF = (55 * Math.PI) / 180;
+export const VISION_R = 5.5;
+export const VISION_HALF = (45 * Math.PI) / 180;
 
 export interface Input {
   fwd: number;

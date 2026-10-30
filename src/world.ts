@@ -658,6 +658,20 @@ export function buildLevel(level: Level): LevelView {
 
   const guard = new Character('guard', 1.75);
   guard.root.visible = false;
+  // Flashlight: a visible cone showing where the guard looks (matches the sim's vision cone).
+  const coneLen = 5.5, coneHalf = (45 * Math.PI) / 180;
+  const coneGeo = new THREE.ConeGeometry(Math.tan(coneHalf) * coneLen, coneLen, 32, 1, true);
+  coneGeo.translate(0, -coneLen / 2, 0);
+  coneGeo.rotateX(-Math.PI / 2);
+  const cone = new THREE.Mesh(coneGeo, new THREE.MeshBasicMaterial({ color: '#fff2b0', transparent: true, opacity: 0.09, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  cone.position.set(0, 1.1, 0);
+  cone.rotation.x = 0.12;
+  cone.name = 'flashlight';
+  guard.root.add(cone);
+  const torch = new THREE.SpotLight('#fff0c0', 18, coneLen + 1, coneHalf, 0.5, 1.2);
+  torch.position.set(0.3, 1.1, 0.2);
+  torch.target.position.set(0, 0, coneLen);
+  guard.root.add(torch, torch.target);
   root.add(guard.root);
   const raccoon = new Character('raccoon', 0.7);
   raccoon.root.visible = false;

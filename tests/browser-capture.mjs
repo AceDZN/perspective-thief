@@ -90,6 +90,90 @@ const scenarios = {
     await shot(page, 'debug-ruler-6m');
     await ctx.close();
   },
+  async solveAll() {
+    // Every level, start to finish, through keyboard events only. Waypoints avoid obstacles.
+    const WAY = { 9: [[1.5, 2.6]], 3: [[0, 1.0]] };
+    const ids = (process.env.LEVELS ?? Array.from({ length: 18 }, (_, i) => i + 1).join(',')).split(',').map(Number);
+    for (const id of ids) {
+      const { ctx, page } = await open(id);
+      const r = await page.evaluate(async ({ id, way }) => {
+        const { plan } = await import('/src/solver.ts');
+        const { levelById } = await import('/src/levels.ts');
+        const L = levelById(id);
+        const log = [];
+        for (const st of plan(L)) {
+          AP.walkTo(st.pad[0], st.pad[1]);
+          const ex = AP.S().exhibits.find((e) => e.id === st.exId);
+          const def = L.exhibits.find((e) => e.id === st.exId);
+          AP.aimAt(def.pos[0], def.pedestal + 0.15, def.pos[1]);
+          AP.act(); AP.tick(100);
+          if (!AP.S().carry) { log.push(`no grab ${st.exId} aim=${JSON.stringify(AP.S().aim)}`); break; }
+          if (st.target.orientation !== undefined) for (let i = 0; i < 3 && AP.S().exhibits.find((e) => e.id === st.exId).orientation !== st.target.orientation; i++) AP.press('KeyR');
+          AP.walkTo(st.stand[0], st.stand[1], 0.02);
+          AP.aimAt(...st.target.zone.c);
+          const s1 = AP.S();
+          log.push(`${st.target.id}: d1=${s1.carry?.d1} d=${s1.aim.d} want=${st.d2.toFixed(3)} aim=${s1.aim.kind}`);
+          AP.act(); AP.tick(600); AP.tick(600);
+          const s2 = AP.S();
+          if (s2.phase !== 'play') { log.push(`after drop phase=${s2.phase} fail=${s2.failure?.kind}`); for (let i = 0; i < 60 && AP.S().phase !== 'play'; i++) { if (AP.S().phase === 'explain') AP.act(); AP.tick(250); } }
+        }
+        for (const w of way ?? []) AP.walkTo(w[0], w[1], 0.15);
+        const e = L.exit.pos;
+        AP.key('KeyW', true);
+        for (let i = 0; i < 80 && AP.S().phase !== 'won'; i++) { const p = AP.S().player; const want = Math.atan2(-(e[0] - p.x), -(e[2] - p.z)); if (Math.abs(Math.atan2(Math.sin(want - p.yaw), Math.cos(want - p.yaw))) > 0.25) { AP.key('KeyW', false); AP.face(e[0], e[2]); AP.key('KeyW', true); } AP.tick(100); }
+        AP.key('KeyW', false); AP.tick(1200);
+        const f = AP.S();
+        return { phase: f.phase, stars: f.stars, stats: f.stats, solved: f.targets.map((t) => t.solved), player: f.player, log };
+      }, { id, way: WAY[id] });
+      results[`solve-${id}`] = r;
+      console.log(id, r.phase, r.stars, JSON.stringify(r.solved), r.log.join(' | '));
+      await page.screenshot({ path: `${out}/solve-${String(id).padStart(2, '0')}.png` });
+      await ctx.close();
+    }
+  },
+  async finale() {
+    // Level 18 with a stealth route: keep > 5.5 m from the patrol square, stand on the far side.
+    const { ctx, page } = await open(18);
+    const r = await page.evaluate(async () => {
+      const { levelById } = await import('/src/levels.ts');
+      const L = levelById(18);
+      const log = [];
+      const go = (pts) => { for (const p of pts) AP.walkTo(p[0], p[1], 0.03); };
+      const grab = (id) => { const d = L.exhibits.find((e) => e.id === id); const pad = L.pads.find((p) => p.forId === id); go([pad.pos]); AP.aimAt(d.pos[0], d.pedestal + 0.2, d.pos[1]); AP.act(); AP.tick(100); log.push(`grab ${id}: ${JSON.stringify(AP.S().carry)}`); };
+      const drop = (tid, stand) => {
+        const t = L.targets.find((x) => x.id === tid);
+        const c = AP.S().carry;
+        const k = { tower: 6, billboard: 3, loop: 2.5 }[tid];
+        // Exact standing spot at k · d₁ along the chosen direction.
+        const dx = stand[0] - t.anchor[0], dz = stand[1] - t.anchor[2], l = Math.hypot(dx, dz);
+        const d2 = k * c.d1;
+        AP.walkTo(t.anchor[0] + (dx / l) * d2, t.anchor[2] + (dz / l) * d2, 0.02);
+        AP.aimAt(...t.zone.c);
+        log.push(`${tid}: d=${AP.S().aim.d} aim=${AP.S().aim.kind} guard=${AP.S().guard.mode}`);
+        AP.act(); AP.tick(700); AP.tick(700);
+        log.push(`  -> ${AP.S().phase} solved=${AP.S().targets.find((x) => x.id === tid).solved}`);
+      };
+      grab('ladder');
+      go([[-11, 9], [-11, -11], [2.25, -11.3]]);
+      drop('tower', [2.25, -11.3]);
+      go([[-11, -11], [-11, 10.6], [2, 10.6]]);
+      grab('banner');
+      go([[-11, 10.6], [-11, 2]]);
+      drop('billboard', [-9.6, 2]);
+      go([[-11, 10.6], [11, 11.3], [9, 11]]);
+      grab('crate');
+      go([[11, 11], [11, -11.3], [-7, -11.3]]);
+      drop('loop', [-7, -9]);
+      go([[-10.6, -10.6]]);
+      AP.tick(1500);
+      const f = AP.S();
+      return { phase: f.phase, stars: f.stars, stats: f.stats, solved: f.targets.map((t) => t.solved), log };
+    });
+    results.finale = r;
+    console.log('finale', r.phase, r.stars, JSON.stringify(r.solved), JSON.stringify(r.stats), '\n  ' + r.log.join('\n  '));
+    await page.screenshot({ path: `${out}/solve-18.png` });
+    await ctx.close();
+  },
   async mobile() {
     const { ctx, page } = await open(1, { width: 390, height: 844, touch: true });
     await run(() => { AP.aimAt(-2.5, 1.1, 0); })(page);
