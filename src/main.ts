@@ -329,7 +329,7 @@ function showWin(): void {
   const prev = save.stars[level.id] ?? 0;
   if (level.id > 0) save.stars[level.id] = Math.max(prev, stars);
   const next = LEVELS.find((l) => l.id === level!.id + 1);
-  if (next) save.current = next.id;
+  if (next) { save.current = next.id; selected = next.id; }
   persist();
   flushLearn(sim);
   const s = sim.stats;
@@ -437,6 +437,8 @@ function enterLevel(l: Level): void {
   mode = 'play';
   menuEl.hidden = true;
   hud.hidden = false;
+  $('toast').className = '';
+  toastTimer = 0;
   mainPass.scene = scene;
   mainPass.camera = camera;
   overlayPass.enabled = true;
@@ -590,9 +592,9 @@ function onEvent(e: GameEvent): void {
   if (!sim || !view || !level) return;
   switch (e.type) {
     case 'step': audio.step(); viewBob += 1; break;
-    case 'grab': audio.grab(); showToast(e.pad ? `תפסתם מרחוק ⟦${e.d1.toFixed(2)}⟧ מ'` : `תפסתם · ⟦d₁ = ${e.d1.toFixed(2)}⟧ מ'`); break;
+    case 'grab': audio.grab(); showToast(e.pad ? `תפסתם ממרחק ⟦${e.d1.toFixed(2)}⟧ מ'` : `תפסתם · ⟦d₁ = ${e.d1.toFixed(2)}⟧ מ'`); break;
     case 'drop': audio.whoosh(); break;
-    case 'floor': audio.thunk(); shake = Math.max(shake, 0.05); break;
+    case 'floor': audio.whoosh(); showToast('העדשה עובדת רק על מטרה — המוצג חזר לכן', '', 2200); break;
     case 'fit': {
       audio.fit();
       successGlow = { exId: e.exId, t: 0 };
@@ -619,6 +621,23 @@ function onEvent(e: GameEvent): void {
         burst(p.clone().add(new THREE.Vector3(0, 1, 0)), '#cfe8ff', 120, 6, 0.1, 9, 2);
         if (e.kind === 'roofCrash') {
           burst(new THREE.Vector3(p.x, level.room.h - 0.2, p.z), '#e8e0d0', 90, 3, 0.16, 9, 2.2);
+          // A jagged hole in the ceiling with the night sky behind it.
+          const ex = sim.ex(f.exId)!;
+          const lb = localBounds(ex.def.shape, f.newScale, ex.orientation);
+          const r0 = Math.max(lb.max[0] - lb.min[0], 1.2) * 0.65;
+          const hole = new THREE.Shape();
+          for (let i = 0; i <= 18; i++) {
+            const a = (i / 18) * Math.PI * 2;
+            const rr = r0 * (0.75 + ((i * 37) % 11) / 22);
+            if (i === 0) hole.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); else hole.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+          }
+          const holeM = new THREE.Mesh(new THREE.ShapeGeometry(hole), new THREE.MeshBasicMaterial({ color: '#8fb0ff', side: THREE.DoubleSide }));
+          holeM.rotation.x = Math.PI / 2;
+          holeM.position.set(p.x, level.room.h - 0.02, p.z + (lb.max[2] + lb.min[2]) / 2);
+          view.root.add(holeM);
+          const moonShaft = new THREE.Mesh(new THREE.CylinderGeometry(r0 * 0.8, r0 * 1.2, level.room.h, 18, 1, true), new THREE.MeshBasicMaterial({ color: '#9fc4ff', transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+          moonShaft.position.set(holeM.position.x, level.room.h / 2, holeM.position.z);
+          view.root.add(moonShaft);
           debris(new THREE.Vector3(p.x, level.room.h - 0.3, p.z + 0.5), 14);
         } else debris(p.clone().add(new THREE.Vector3(0, 0.8, 0.4)), 8);
         flash(0.35);
@@ -679,6 +698,13 @@ function syncView(dt: number, realtime: boolean): void {
   if (phase === 'caught') {
     const g = sim.guard.pos;
     camera.rotation.set(Math.min(0.5, sim.phaseT * 0.4), Math.atan2(-(g[0] - P.x), -(g[1] - P.z)), Math.sin(sim.phaseT * 6) * 0.1);
+  }
+  // Roof crash: the camera follows the exhibit up through the ceiling for a moment.
+  if (phase === 'consequence' && consequenceFx === 'roofCrash' && !reduced && sim.failure) {
+    const fp = sim.failure.point;
+    const up = Math.atan2(level.room.h - camY, Math.max(0.5, Math.hypot(fp[0] - P.x, fp[2] - P.z)));
+    const e = Math.min(1, sim.phaseT * 2) * Math.min(1, (1.6 - sim.phaseT) * 3);
+    camera.rotation.x = P.pitch + (Math.min(up, 0.9) - P.pitch) * Math.max(0, e);
   }
   if (shake > 0 && !reduced) {
     camera.position.x += (Math.random() - 0.5) * shake * 0.3;
@@ -1007,6 +1033,16 @@ function updateHud(): void {
   $('hideChip').hidden = sim.phase !== 'chase';
   $('tAct').textContent = sim.carry ? 'הניחו' : 'תפסו';
   $('tRot').hidden = !(sim.carry && sim.ex(sim.carry.exId)?.def.shape.type === 'tri');
+  $('tClimb').hidden = !(touch && sim.phase === 'play' && sim.climbable());
+  if (sim.phase === 'chase' && level.hides.length) {
+    // Arrow toward the nearest hide spot, relative to where you're looking.
+    const P = sim.player;
+    let best = level.hides[0];
+    for (const h of level.hides) if (Math.hypot(h[0] - P.x, h[1] - P.z) < Math.hypot(best[0] - P.x, best[1] - P.z)) best = h;
+    const want = Math.atan2(-(best[0] - P.x), -(best[1] - P.z));
+    const rel = Math.atan2(Math.sin(want - P.yaw), Math.cos(want - P.yaw));
+    $('hideArrow').style.transform = `rotate(${-90 - (rel * 180) / Math.PI}deg)`;
+  }
   if (toastTimer > 0) {
     toastTimer -= 1 / 60;
     if (toastTimer <= 0) $('toast').className = '';

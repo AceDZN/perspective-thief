@@ -465,7 +465,7 @@ export class Sim {
       if (t.accepts !== ex.def.id) {
         // A piece that is not similar to this frame never fits, whatever k is.
         const lines = ex.def.similar === false
-          ? [`השתמשת ב־⟦k = ${round(d2)} ÷ ${round(d1)} = ${round(k)}⟧`, 'הצורה הזאת לא דומה למסגרת: הזוויות והצלעות שלה לא מתאימות, ולכן אין ⟦k⟧ שיתאים. שטח שווה לא אומר דמיון.']
+          ? [`השתמשתם ב־⟦k = ${round(d2)} ÷ ${round(d1)} = ${round(k)}⟧`, 'הצורה הזאת לא דומה למסגרת: הזוויות והצלעות שלה לא מתאימות, ולכן אין ⟦k⟧ שיתאים. שטח שווה לא אומר דמיון.']
           : ['זה לא החפץ שמתאים למטרה הזאת. נסו חפץ אחר.'];
         this.learn({ action: 'drop', exId: ex.def.id, targetId: t.id, d1, d2, k, outcome: ex.def.similar === false ? 'notSimilar' : 'wrongExhibit', attempt });
         return this.startFail({ kind: 'noFit', exId: ex.def.id, targetId: t.id, d1, d2, lines, newScale, point: [...t.anchor] as V3, yaw: t.yaw, alarm: false });
@@ -493,7 +493,7 @@ export class Sim {
         this.setPhase('whoosh');
         return true;
       }
-      const lines = explain(check, measure, d1, d2);
+      const lines = explain(check, measure, d1, d2, attempt);
       if (kind === 'roofCrash' && check.verdict === 'fit') lines.unshift('גבוה מהתקרה!');
       return this.startFail({ kind, exId: ex.def.id, targetId: t.id, check, d1, d2, lines, newScale, point: [...t.anchor] as V3, yaw: t.yaw, alarm: kind === 'crash' || kind === 'roofCrash' });
     }
@@ -515,7 +515,9 @@ export class Sim {
       const lines = [`⟦k = ${round(d2)} ÷ ${round(d1)} = ${round(k)}⟧`, kind === 'roofCrash' ? 'גבוה מהתקרה — דרך הגג!' : 'גדול מדי למקום הזה — התנגש!'];
       return this.startFail({ kind, exId: ex.def.id, d1, d2, lines, newScale, point: pos, yaw, alarm: true });
     }
-    this.whoosh = { exId: ex.def.id, from: { scale: ex.scale }, to: pos, yaw, newScale, t: 0, dur: 0.4, verdict: 'floor' };
+    // The lens's change only sticks on a target: anywhere else the exhibit flies back to its
+    // pedestal at its starting size (no sizing things up by eye on the floor).
+    this.whoosh = { exId: ex.def.id, from: { scale: ex.scale }, to: [ex.def.pos[0], ex.def.pedestal, ex.def.pos[1]], yaw: ex.def.yaw, newScale: ex.def.initialScale ?? 1, t: 0, dur: 0.6, verdict: 'floor' };
     this.setPhase('whoosh');
     return true;
   }
@@ -673,6 +675,22 @@ export class Sim {
     if ((input.climb || this.pushT > 0.35) && onGround) this.tryClimb();
   }
 
+  /** Is there a ledge you could climb right in front of you? (for the touch climb button) */
+  climbable(): boolean {
+    const P = this.player;
+    const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw);
+    for (const reach of [0.45, 0.6, 0.8]) {
+      const x = P.x + fx * reach, z = P.z + fz * reach;
+      let top = -Infinity;
+      for (const c of this.colliders) {
+        const t = this.colliderTop(c, x, z, 0);
+        if (t !== null && t > top) top = t;
+      }
+      if (top > P.y + STEP && top <= P.y + CLIMB + 1e-6 && top + 1.75 <= this.level.room.h && !this.blocked(x, z, top)) return true;
+    }
+    return false;
+  }
+
   tryClimb(): boolean {
     const P = this.player;
     const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw);
@@ -725,7 +743,8 @@ export class Sim {
       this.events.push({ type: 'fit', exId: ex.def.id, targetId: t.id, k: w.newScale });
       if (this.allSolved()) this.events.push({ type: 'exitOpen' });
     } else {
-      ex.state = 'floor';
+      ex.state = 'pedestal';
+      ex.orientation = ex.def.orientation ?? 0;
       this.events.push({ type: 'floor', exId: ex.def.id, k: w.newScale });
     }
     this.rebuildColliders();
@@ -806,17 +825,17 @@ export class Sim {
         const arrived = this.moveGuard(G.target, GUARD_CHASE * 0.8, dt);
         if (arrived && G.t > 1) {
           // Look around, scratch head, then leave.
-          if (G.t > 4.2) { G.mode = 'leave'; G.t = 0; }
+          if (G.t > 2.8) { G.mode = 'leave'; G.t = 0; }
         }
       } else if (G.mode === 'leave') {
         const home = this.level.patrol ? this.level.patrol[G.patrolIdx] : this.level.guardDoor;
         const arrived = this.moveGuard(home, GUARD_CHASE, dt);
-        if (arrived || G.t > 5) this.endChase();
+        if (arrived || G.t > 2.5) this.endChase();
       }
       return;
     }
     if (this.phase === 'caught') {
-      if (this.phaseT > 2.2) {
+      if (this.phaseT > 2.6) {
         this.respawnPlayer();
         this.endChase();
       }
@@ -845,10 +864,12 @@ export class Sim {
     const G = this.guard;
     const route = this.level.patrol!;
     if (G.mode !== 'patrol') return;
-    // Time moves for the guard only while you move: stand still to think.
-    if (!this.moved) return;
-    const tgt = route[G.patrolIdx];
-    if (this.moveGuard(tgt, GUARD_PATROL, dt)) G.patrolIdx = (G.patrolIdx + 1) % route.length;
+    // Time moves for the guard only while you move (stand still to think), but he still sees
+    // whatever is in his flashlight cone.
+    if (this.moved) {
+      const tgt = route[G.patrolIdx];
+      if (this.moveGuard(tgt, GUARD_PATROL, dt)) G.patrolIdx = (G.patrolIdx + 1) % route.length;
+    }
     // Vision cone.
     const dx = this.player.x - G.pos[0], dz = this.player.z - G.pos[1];
     const dist = Math.hypot(dx, dz);

@@ -158,36 +158,57 @@ test('powerName and fmt', () => {
 
 const balanced = (s: string) => (s.match(/⟦/g) ?? []).length === (s.match(/⟧/g) ?? []).length;
 
-test('explain: the used ratio, the needed ratio, the root and which way to move', () => {
+test('explain (3rd failure): the used ratio, the ratio kind, the needed k, the root and which way to move', () => {
   // Area, the k = 9 skylight mistake.
   const m2 = area(0.24);
   const c2 = checkDrop({ measure: m2, need: need(2.16), currentScale: 1, d1: 1.5, d2: 13.5 });
-  const l2 = explain(c2, m2, 1.5, 13.5);
-  assert.equal(l2.length, 4);
+  const l2 = explain(c2, m2, 1.5, 13.5, 3);
+  assert.equal(l2.length, 5);
   assert.match(l2[0], /k = 13\.5 ÷ 1\.5 = 9/);
-  assert.match(l2[1], /k = 3/);
   assert.match(l2[1], /יחס שטחים/);
-  assert.match(l2[1], /k²/);
-  assert.match(l2[2], /√9 = 3/);
+  assert.match(l2[2], /k = 3/);
+  assert.match(l2[2], /k²/);
+  assert.match(l2[3], /√9 = 3/);
   // The card says which way to move, not the exact d₂ (the retry still needs k · d₁).
-  assert.match(l2[3], /קרוב יותר/);
+  assert.match(l2[4], /קרוב יותר/);
   // Weight: cube root.
   const m3 = weight(2);
   const c3 = checkDrop({ measure: m3, need: need(54), currentScale: 1, d1: 1.2, d2: 6 });
-  const l3 = explain(c3, m3, 1.2, 6);
-  assert.equal(l3.length, 4);
-  assert.match(l3[2], /∛27 = 3/);
-  assert.match(l3[3], /קרוב יותר/);
+  const l3 = explain(c3, m3, 1.2, 6, 3);
+  assert.equal(l3.length, 5);
+  assert.match(l3[3], /∛27 = 3/);
+  assert.match(l3[4], /קרוב יותר/);
   // Length: no root line.
   const m1 = len(0.5);
   const c1 = checkDrop({ measure: m1, need: need(1.5), currentScale: 1, d1: 2, d2: 5 });
-  const l1 = explain(c1, m1, 2, 5);
-  assert.equal(l1.length, 3);
+  const l1 = explain(c1, m1, 2, 5, 3);
+  assert.equal(l1.length, 4);
   assert.match(l1[0], /k = 5 ÷ 2 = 2\.5/);
   assert.match(l1[1], /יחס אורכים/);
+  assert.match(l1[2], /k = 3/);
   assert.ok(!l1.join(' ').includes('√'));
-  assert.match(l1[2], /רחוק יותר/);
-  for (const l of [...l1, ...l2, ...l3]) assert.ok(balanced(l), `unbalanced LTR markers: ${l}`);
+  assert.match(l1[3], /רחוק יותר/);
+  // A range target (slack) states the window, not a single k.
+  const cr = checkDrop({ measure: len(1.2), need: need(3.15, 3.0, 3.3), currentScale: 1, d1: 2, d2: 4.5 });
+  const lr = explain(cr, len(1.2), 2, 4.5, 3);
+  assert.match(lr[2], /בין/);
+  assert.match(lr[2], /2\.5/);
+  assert.match(lr[2], /2\.75/);
+  for (const l of [...l1, ...l2, ...l3, ...lr]) assert.ok(balanced(l), `unbalanced LTR markers: ${l}`);
+});
+
+test('explain is progressive: the first card never gives the needed k', () => {
+  const m2 = area(0.24);
+  const c2 = checkDrop({ measure: m2, need: need(2.16), currentScale: 1, d1: 1.5, d2: 13.5 });
+  const first = explain(c2, m2, 1.5, 13.5, 1);
+  assert.equal(first.length, 2);
+  assert.match(first[0], /k = 13\.5 ÷ 1\.5 = 9/);
+  assert.match(first[1], /קרוב יותר/);
+  assert.ok(!first.join(' ').includes('k = 3'));
+  const second = explain(c2, m2, 1.5, 13.5, 2);
+  assert.equal(second.length, 3);
+  assert.match(second[1], /יחס שטחים/);
+  assert.ok(!second.join(' ').includes('k = 3'));
 });
 
 test('explain: jam and noFit have their own short lines (no drop distance)', () => {
@@ -215,6 +236,7 @@ test('starsFor: hints, alarms, failures and re-grabs', () => {
   assert.equal(s(0, 1, 1), 2, 'alarm + failure is the same mistake');
   assert.equal(s(0, 0, 0, 2), 2);
   assert.equal(s(1, 1), 1);
-  assert.equal(s(0, 0, 3), 1, 'more than two failures');
+  assert.equal(s(0, 0, 2), 1, 'a second failed drop costs another star');
+  assert.equal(starsFor({ hints: 0, alarms: 1, failures: 1, regrabs: 0, caught: 1 }), 1, 'getting caught instead of hiding costs a star');
   assert.equal(s(5, 5, 5, 5), 1, 'never below 1');
 });

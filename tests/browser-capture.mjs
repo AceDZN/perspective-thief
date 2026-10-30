@@ -62,7 +62,7 @@ const scenarios = {
   },
   async crash() {
     const { ctx, page } = await open(12);
-    await run(() => { AP.walkTo(3.5, 3.7); AP.aimAt(3.5, 1.2, 2.5); AP.act(); AP.tick(100); AP.walkTo(0, 4.85); AP.aimAt(0, 1.6, -5.7); AP.act(); AP.tick(300); AP.tick(250); AP.pitchTo(0.22); AP.tick(250); })(page);
+    await run(() => { AP.walkTo(3.5, 3.7); AP.aimAt(3.5, 1.2, 2.5); AP.act(); AP.tick(100); AP.walkTo(0, 4.85); AP.aimAt(0, 1.6, -5.7); AP.act(); AP.tick(300); AP.tick(250); AP.tick(250); })(page);
     await shot(page, '03-failure-crash');
     await run(() => { AP.turnTo(-1.0); AP.pitchTo(0.02); for (let i = 0; i < 40 && AP.S().phase !== 'chase'; i++) AP.tick(100); AP.tick(1100); })(page);
     await shot(page, '03b-guard-chase');
@@ -178,6 +178,12 @@ const scenarios = {
     const { ctx, page } = await open(2);
     await run(() => { AP.walkTo(2.2, 5.2); AP.aimAt(5.5, 0.5, 4); })(page);
     await shot(page, 'debug-vent');
+    await ctx.close();
+  },
+  async mobileMenu() {
+    const { ctx, page } = await open(0, { width: 390, height: 844, touch: true });
+    await page.waitForTimeout(1500);
+    await page.screenshot({ path: `${out}/00-menu-mobile.png` });
     await ctx.close();
   },
   async mobile() {

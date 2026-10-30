@@ -23,6 +23,12 @@ interface Outcome {
 function simBefore(level: Level, idx: number): { sim: Sim; steps: PlanStep[] } {
   const steps = plan(level);
   const sim = new Sim(level);
+  // These tests are about ratios, not stealth: park the finale's patrol guard at his door,
+  // facing the wall (he only moves when the player walks, and teleports aren't walking).
+  if (level.patrol) {
+    sim.guard.pos = [...level.guardDoor] as V2;
+    sim.guard.yaw = 0;
+  }
   for (let i = 0; i < idx; i++) {
     playStep(sim, steps[i]);
     assert.ok(sim.solved.has(steps[i].target.id), `setup: level ${level.id} ${steps[i].target.id}`);

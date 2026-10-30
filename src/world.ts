@@ -164,7 +164,7 @@ export function buildExhibitMesh(def: Exhibit | { shape: Shape }, orientation = 
       for (let i = 0; i < 3; i++) {
         const a = pts[i], b = pts[(i + 1) % 3];
         const sideIndex = (orientation + i) % 3;
-        const lbl = labelPlane([`⟦${s.labels[sideIndex]}⟧`], Math.min(0.14, s.sides[sideIndex] * 0.36), 'brass');
+        const lbl = labelPlane([`⟦${s.labels[sideIndex]}⟧`], Math.min(0.22, s.sides[sideIndex] * 0.5), 'brass');
         const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
         // Pull the label toward the centroid so it sits on the sign.
         const cx = (pts[0][0] + pts[1][0] + pts[2][0]) / 3, cy = (pts[0][1] + pts[1][1] + pts[2][1]) / 3;
@@ -391,7 +391,7 @@ export function buildLevel(level: Level): LevelView {
     // Coffer beams.
     for (let x = R.x0 + 2; x < R.x1; x += 2) root.add(boxAt([x - 0.08, R.h - 0.25, R.z0], [x + 0.08, R.h, R.z1], M.wood()));
     // Skylight strip.
-    const sky = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(3, W / 3), D * 0.6), new THREE.MeshBasicMaterial({ color: '#36518f' }));
+    const sky = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(3, W / 3), D * 0.6), new THREE.MeshStandardMaterial({ color: '#1a2238', roughness: 0.3, metalness: 0.4 }));
     sky.rotation.x = Math.PI / 2;
     sky.position.set(cx, R.h - 0.01, cz);
     root.add(sky);
@@ -669,7 +669,7 @@ export function buildLevel(level: Level): LevelView {
   }
 
   const lamps: THREE.PointLight[] = [];
-  if (!roof) {
+  if (!roof && R.theme !== 'shadows') {
     const lampPos: V3[] = [[R.x0 + 0.5, 2.4, cz - D / 4], [R.x1 - 0.5, 2.4, cz + D / 4], [cx, R.h - 0.6, R.z0 + 1]];
     for (const p of lampPos) {
       const l = new THREE.PointLight('#ffa64a', 5, 8, 1.6);
@@ -1076,7 +1076,7 @@ function buildTarget(t: Target, level: Level, root: THREE.Group): TargetVisual {
         const o = t.orientation ?? 0;
         for (let i = 0; i < 3; i++) {
           const a = hole[i], c = hole[(i + 1) % 3];
-          const lbl = labelPlane([`⟦${labels[(o + i) % 3]}⟧`], 0.16, 'brass');
+          const lbl = labelPlane([`⟦${labels[(o + i) % 3]}⟧`], 0.28, 'brass');
           const mx = (a[0] + c[0]) / 2, my = (a[1] + c[1]) / 2;
           const cx2 = (hole[0][0] + hole[1][0] + hole[2][0]) / 3, cy2 = (hole[0][1] + hole[1][1] + hole[2][1]) / 3;
           lbl.position.set(mx - (cx2 - mx) * 0.25, my - (cy2 - my) * 0.25, 0.03);
@@ -1177,7 +1177,7 @@ function buildTarget(t: Target, level: Level, root: THREE.Group): TargetVisual {
 
   // Brass plate beside the target, facing into the room (local +z).
   const wallMounted = ['niche', 'vent', 'doorway', 'laserWall', 'frameTri', 'framePoly', 'window', 'keyhole'].includes(t.socket);
-  const plate = labelPlane(t.plate, 0.95, 'brass');
+  const plate = labelPlane(t.plate, t.socket === 'niche' ? 1.25 : t.socket === 'framePoly' ? 0.5 : 0.95, 'brass');
   const side = Math.max(w / 2, 0.45) + 0.55;
   const local = new THREE.Vector3(-side, wallMounted ? 1.55 - t.anchor[1] : 1.05 - t.anchor[1], wallMounted ? Math.max(0.02, b.min[2] + 0.02) : 0);
   if (t.socket === 'niche') local.set(-1.75 - 0.4, 2.1, -0.75);

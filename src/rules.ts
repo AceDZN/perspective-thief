@@ -131,12 +131,14 @@ export function fmtFixed(n: number, digits = 2): string {
 }
 
 /**
- * The short worked explanation shown after a failure. Returns plain strings; numbers are meant
- * to be wrapped in LTR spans by the HUD (they are marked with ⟦…⟧).
+ * The worked explanation shown after a failure, revealed step by step so the card never hands
+ * over the answer on the first miss: attempt 1 shows the ratio used and which way to move,
+ * attempt 2 adds which kind of ratio it is, attempt 3+ shows the needed k (and the root).
+ * Numbers are marked with ⟦…⟧ for LTR rendering.
  */
-export function explain(check: DropCheck, m: Measure, d1: number, d2: number): string[] {
+export function explain(check: DropCheck, m: Measure, d1: number, d2: number, attempt = 3): string[] {
   const lines: string[] = [];
-  lines.push(`השתמשת ב־⟦k = ${fmt(d2)} ÷ ${fmt(d1)} = ${fmt(check.k)}⟧`);
+  lines.push(`השתמשתם ב־⟦k = ${fmt(d2)} ÷ ${fmt(d1)} = ${fmt(check.k)}⟧`);
   if (check.verdict === 'jam') {
     lines.push('היחס נכון, אבל הצלעות לא מתאימות: סובבו כך שכל צלע תפגוש את הצלע המתאימה לה.');
     return lines;
@@ -145,9 +147,19 @@ export function explain(check: DropCheck, m: Measure, d1: number, d2: number): s
     lines.push('הצורה הזאת לא דומה למסגרת: הזוויות והצלעות שלה לא מתאימות לשל המסגרת, ולכן אין ⟦k⟧ שיתאים. שטח שווה לא אומר דמיון.');
     return lines;
   }
-  lines.push(`היה צריך ⟦k = ${fmt(check.kNeeded)}⟧ · ${powerName(m.power)}${m.power === 1 ? '' : ` = ⟦k${m.power === 2 ? '²' : '³'}⟧`}`);
-  if (m.power === 2) lines.push(`השטח גדל פי ⟦k² = ${fmt(check.kNeeded ** 2)}⟧, לכן ⟦k = √${fmt(check.kNeeded ** 2)} = ${fmt(check.kNeeded)}⟧`);
-  if (m.power === 3) lines.push(`המשקל גדל פי ⟦k³ = ${fmt(check.kNeeded ** 3)}⟧, לכן ⟦k = ∛${fmt(check.kNeeded ** 3)} = ${fmt(check.kNeeded)}⟧`);
+  const kind = m.power === 1 ? 'יחס אורכים — ⟦k⟧ עצמו' : m.power === 2 ? 'יחס שטחים — השטח גדל פי ⟦k²⟧' : 'יחס נפחים — המשקל גדל פי ⟦k³⟧';
+  if (attempt >= 2) lines.push(`זה ${kind}.`);
+  if (attempt >= 3) {
+    const n = check.need;
+    if (n.min !== undefined && n.max !== undefined && m.power === 1) {
+      const base = check.got / Math.pow(check.k, m.power) * 1; // measure at the current scale
+      lines.push(`היה צריך ⟦k⟧ בין ⟦${fmt(n.min / base)}⟧ ל־⟦${fmt(n.max / base)}⟧`);
+    } else {
+      lines.push(`היה צריך ⟦k = ${fmt(check.kNeeded)}⟧ · ${powerName(m.power)}${m.power === 1 ? '' : ` = ⟦k${m.power === 2 ? '²' : '³'}⟧`}`);
+      if (m.power === 2) lines.push(`השטח גדל פי ⟦k² = ${fmt(check.kNeeded ** 2)}⟧, לכן ⟦k = √${fmt(check.kNeeded ** 2)} = ${fmt(check.kNeeded)}⟧`);
+      if (m.power === 3) lines.push(`המשקל גדל פי ⟦k³ = ${fmt(check.kNeeded ** 3)}⟧, לכן ⟦k = ∛${fmt(check.kNeeded ** 3)} = ${fmt(check.kNeeded)}⟧`);
+    }
+  }
   lines.push(check.k > check.kNeeded ? 'הניחו קרוב יותר.' : 'הניחו רחוק יותר.');
   return lines;
 }
@@ -157,13 +169,17 @@ export interface StarInput {
   alarms: number;
   failures: number;
   regrabs: number;
+  caught?: number;
 }
 
-/** 3 stars: no hint, no alarm, no failed drop, ≤ 1 re-grab. A hint caps at 2. */
+/**
+ * 3 stars: no hint, no alarm, no failed drop. A hint costs one, any mistake one, and a second
+ * failed drop or getting caught by the guard (instead of hiding) another. Never below 1.
+ */
 export function starsFor(s: StarInput): number {
   let stars = 3;
   if (s.hints > 0) stars -= 1;
   if (s.alarms > 0 || s.failures > 0) stars -= 1;
-  if (s.regrabs > 1 || s.failures > 2) stars -= 1;
+  if (s.regrabs > 1 || s.failures > 1 || (s.caught ?? 0) > 0) stars -= 1;
   return Math.max(1, stars);
 }

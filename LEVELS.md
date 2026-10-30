@@ -90,9 +90,9 @@ All numbers come from `src/levels.ts` and the solver (`src/solver.ts` `plan()`);
 - **Grab d₁ = 2 m → drop d₂ = 6 m**, window [5.88, 6.12] m.
 - **Wrong:** k = √3 (perimeter like area) → `gapLeft`; side vs perimeter (k = 12, out of reach) or anything too far → `crash`.
 
-### 12 · מכסים את הצוהר
+### 12 · מכסים את חלון הירח
 - **Situation:** black out the moon window with a painting of the same shape.
-- **Given:** "ציור שמן · 0.6 × 0.4 מ'" (0.24 m²); "צוהר הירח · שטח 2.16 מ"ר · אותה צורה כמו הציור". Tutorial: lengths × k → area × k².
+- **Given:** "ציור שמן · 0.6 × 0.4 מ'" (0.24 m²); "חלון הירח · שטח 2.16 מ"ר · אותה צורה כמו הציור". Tutorial: lengths × k → area × k².
 - **Math:** 2.16 ÷ 0.24 = 9 = k² → k = 3 (1.8 × 1.2 m).
 - **Grab d₁ = 1.2 m → drop d₂ = 3.6 m**, window [3.528, 3.672] m. (Pad moved from 1.5 m so that d₁ + k ≠ k · d₁.)
 - **Wrong:** k = 9 → 10.8 m (a real spot: the hall was lengthened to z = 9 for this) → a 3.6 m painting → `roofCrash` + alarm + guard; too small → `gapLeft`.

@@ -158,8 +158,13 @@ export function buildMenu(): MenuView {
       t += dt;
       const sway = reduced ? 0 : Math.sin(t * 0.25) * 0.6;
       const aspect = camera.aspect;
-      const dist = aspect < 1 ? 30 : aspect < 1.4 ? 24 : 19;
+      // Fit the whole map: 23 m wide, 13 m deep, whatever the container's shape.
+      const tf = Math.tan(((camera.fov / 2) * Math.PI) / 180);
+      const dist = Math.max(19, (11.5 / (tf * aspect)) * 0.95, 7 / tf);
       camera.position.set(0.5 + sway, dist * 0.82, dist * 0.62 + 2);
+      const fog = scene.fog as THREE.Fog;
+      fog.near = dist * 1.1;
+      fog.far = dist * 2.6;
       camera.lookAt(0.5, 0, -0.4);
       const p = nodePos.get(current);
       if (p) {

@@ -10,7 +10,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: #05060c; color: var(--ink); font-family: var(--font); overflow: hidden; }
 button { font-family: inherit; cursor: pointer; }
-bdi, .ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+bdi, .ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; white-space: nowrap; }
 
 #app { position: relative; width: 100%; height: 100%; overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none; container-type: size; }
 #game { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
@@ -85,7 +85,8 @@ bdi, .ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
   display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 16px; font-weight: 700;
   box-shadow: 0 0 22px rgba(255, 200, 80, 0.6); animation: pulse 0.8s infinite alternate;
 }
-.hidechip .ico { font-size: 30px; }
+.hidechip { pointer-events: none; }
+.harrow { font-size: 34px; display: inline-block; transition: transform 0.1s linear; }
 @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.08); } }
 
 #vignette { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.3s; background: radial-gradient(ellipse at center, transparent 45%, rgba(220, 0, 0, 0.55) 100%); }
@@ -207,7 +208,9 @@ body.touch .chip { bottom: auto; top: 120px; right: 16px; }
   .node .nstars { top: 34px; font-size: 10px; }
   .hall { font-size: 13px; padding: 3px 8px; }
   .note { display: none; }
-  .tbtn.big { width: 92px; height: 92px; font-size: 18px; }
+  .tbtn.big { width: 84px; height: 84px; font-size: 17px; right: 6px; bottom: 120px; }
+  .logo1 { font-size: 26px; } .logo2 { font-size: 22px; } .logoSub { display: none; }
+  .logo { right: 10px; top: 8px; }
   #toast { font-size: 17px; white-space: normal; max-width: 90cqw; }
 }
 @media (prefers-reduced-motion: reduce) {
