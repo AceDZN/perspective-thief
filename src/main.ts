@@ -45,13 +45,13 @@ function starsHtml(n: number, of = 3): string {
 // ─────────────── persistence ───────────────
 const KEY = 'perspective-thief:v1';
 const LEARN = 'perspective-thief:learn';
-interface Save { stars: Record<number, number>; reduced: boolean; muted: boolean; current: number }
+interface Save { stars: Record<number, number>; reduced: boolean; muted: boolean; current: number; challenges: Record<number, number>; seenWorlds: number[] }
 function loadSave(): Save {
   try {
     const s = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-    return { stars: s.stars ?? {}, reduced: !!s.reduced, muted: !!s.muted, current: s.current ?? 1 };
+    return { stars: s.stars ?? {}, reduced: !!s.reduced, muted: !!s.muted, current: s.current ?? 1, challenges: s.challenges ?? {}, seenWorlds: s.seenWorlds ?? [] };
   } catch {
-    return { stars: {}, reduced: false, muted: false, current: 1 };
+    return { stars: {}, reduced: false, muted: false, current: 1, challenges: {}, seenWorlds: [] };
   }
 }
 const save = loadSave();
@@ -186,6 +186,7 @@ let successGlow: { exId: string; t: number } | null = null;
 let raccoonShow: { pos: THREE.Vector3; t: number } | null = null;
 let consequenceFx: ConsequenceKind | null = null;
 let lastPhase = '';
+let intro: { t: number; dur: number; from: THREE.Vector3; look: THREE.Vector3 } | null = null;
 const solvedLaserOff = new Set<string>();
 
 // Overlay objects: view model (gloved hand + lens) and held-object holder.
@@ -366,6 +367,8 @@ function showCard(kind: typeof cardKind, inner: string): void {
   card.className = 'card ' + kind;
   card.innerHTML = inner;
   card.hidden = false;
+  $('toast').className = '';
+  toastTimer = 0;
   if (document.pointerLockElement) document.exitPointerLock();
   const btn = card.querySelector<HTMLButtonElement>('button.primary, button');
   btn?.focus({ preventScroll: true });
@@ -376,11 +379,21 @@ function hideCard(): void {
   controls.clear();
 }
 
-function showTutorial(l: Level): void {
+/** Hall banner (first visit to a world) and/or the level's tutorial lines. */
+function showBriefing(l: Level): boolean {
+  const w = WORLDS.find((x) => x.id === l.world)!;
+  const newHall = l.id > 0 && !save.seenWorlds.includes(l.world);
+  if (!newHall && !l.tutorial?.length) return false;
+  const hall = newHall
+    ? `<div class="hallbanner"><div class="tier">${html(w.tier)}</div><h2>${html(w.title)}</h2><p class="sub">${html(w.subtitle)}</p>${w.intro.map((t) => `<p class="math">${html(t)}</p>`).join('')}</div>`
+    : '';
   const lines = (l.tutorial ?? []).map((t) => `<p class="math">${html(t)}</p>`).join('');
   const ext = l.extension ? '<p class="stats">הרחבה — מעבר לתוכנית הליבה</p>' : '';
-  showCard('tutorial', `<div class="tut"><h2>${html(l.title)}</h2>${ext}${lines}</div><div class="row"><button class="btn primary" id="tutGo">יאללה לשדוד</button></div>`);
+  const levelPart = lines ? `<div class="tut">${newHall ? `<h3>${html(l.title)}</h3>` : `<h2>${html(l.title)}</h2>`}${ext}${lines}</div>` : '';
+  showCard('tutorial', `${hall}${levelPart}<div class="row"><button class="btn primary" id="tutGo">יאללה לשדוד</button></div>`);
+  if (newHall) { save.seenWorlds.push(l.world); persist(); }
   $('tutGo').onclick = () => { hideCard(); lockPointer(); };
+  return true;
 }
 
 function showFail(): void {
@@ -394,22 +407,43 @@ function showFail(): void {
 function showWin(): void {
   if (!sim || !level) return;
   const stars = sim.stars;
+  const isGen = level.id < 0;
   const prev = save.stars[level.id] ?? 0;
-  if (level.id > 0) save.stars[level.id] = Math.max(prev, stars);
-  const next = LEVELS.find((l) => l.id === level!.id + 1);
+  if (!isGen) save.stars[level.id] = Math.max(prev, stars);
+  else save.challenges[level.world] = (save.challenges[level.world] ?? 0) + 1;
+  const next = isGen ? undefined : LEVELS.find((l) => l.id === level!.id + 1);
   if (next) { save.current = next.id; selected = next.id; }
   persist();
   flushLearn(sim);
   const s = sim.stats;
+  const acc = sim.fits.length ? sim.fits.reduce((a, f) => a + f.accuracy, 0) / sim.fits.length : 1;
+  const secs = Math.round(sim.time);
+  const badges: string[] = [];
+  if (sim.fits.length && sim.fits.every((f) => f.firstTry)) badges.push('🎯 בניסיון הראשון, בלי עזרה');
+  if (!s.alarms) badges.push('🤫 בלי אזעקה');
+  if (acc >= 0.995) badges.push('🔬 דיוק של צלף');
+  if (stars === 3 && prev < 3 && prev > 0) badges.push('⭐ שיפרתם ל־3 כוכבים');
   const why: string[] = [];
-  if (s.hints) why.push('השתמשתם ברמז');
-  if (s.alarms) why.push('הפעלתם אזעקה');
-  if (s.failures && !s.alarms) why.push('הנחה שגויה');
-  if (s.regrabs > 1) why.push('הרבה תפיסות חוזרות');
-  const starSpans = [0, 1, 2].map((i) => `<span class="${i < stars ? '' : 'off'}" style="animation-delay:${0.15 + i * 0.2}s">★</span>`).join('');
-  const isGen = level.id < 0;
-  showCard('win', `<h2>${isGen ? 'שוד מוצלח!' : 'נמלטתם!'}</h2><div class="bigstars">${starSpans}</div><p>${html(level.title)}</p><p class="stats">${why.length ? why.join(' · ') : 'שוד מושלם: בלי רמז, בלי אזעקה'}</p>
-  <div class="row">${next && !isGen ? '<button class="btn primary" id="winNext">לשלב הבא</button>' : ''}${isGen ? '<button class="btn primary" id="winMore">עוד חדר</button>' : ''}<button class="btn" id="winAgain">שוב</button><button class="btn" id="winMap">למפה</button></div>`);
+  if (s.hints) why.push('רמז');
+  if (s.alarms) why.push('אזעקה');
+  if (s.failures) why.push(`${s.failures} הנחות שגויות`);
+  if (s.caught) why.push('נתפסתם');
+  const starSpans = [0, 1, 2].map((i) => `<span class="${i < stars ? '' : 'off'}" style="animation-delay:${0.15 + i * 0.25}s">★</span>`).join('');
+  const worldDone = !isGen && !!next && next.world !== level.world;
+  const nw = worldDone ? WORLDS.find((w) => w.id === next!.world) : undefined;
+  const finale = !isGen && !next;
+  const unlockNote = finale ? `<div class="unlock">🏆 ברחתם מהמוזיאון עם כל השלל!<br><span class="stats">חדרי האתגר פתוחים בכל האולמות — במפה, הכפתור ★ ליד כל אולם.</span></div>` : nw ? `<div class="unlock">🔓 נפתח: <b>${html(nw.title)}</b> · ${html(nw.tier)}<br><span class="stats">וגם חדר אתגר חדש ב${html(WORLDS.find((w) => w.id === level!.world)!.title)}</span></div>` : '';
+  showCard('win', `<h2>${isGen ? 'שוד מוצלח!' : 'נמלטתם!'}</h2><div class="bigstars">${starSpans}</div>
+  <p class="wintitle">${html(level.title)}</p>
+  <div class="results">
+    <div><span class="rl">דיוק ההנחה</span><span class="rv"><bdi dir="ltr">${(acc * 100).toFixed(1)}%</bdi></span></div>
+    <div><span class="rl">זמן</span><span class="rv"><bdi dir="ltr">${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}</bdi></span></div>
+    <div><span class="rl">איבדתם כוכב על</span><span class="rv small">${why.length ? why.join(' · ') : '—'}</span></div>
+  </div>
+  ${badges.length ? `<div class="badges">${badges.map((b) => `<span>${b}</span>`).join('')}</div>` : ''}
+  <p class="skill">תרגלתם: ${html(level.skill)}</p>
+  ${unlockNote}
+  <div class="row">${next ? '<button class="btn primary" id="winNext">לשלב הבא</button>' : ''}${isGen ? '<button class="btn primary" id="winMore">עוד חדר אתגר</button>' : ''}<button class="btn" id="winAgain">${stars < 3 && !isGen ? 'שוב, ל־3 כוכבים' : 'שוב'}</button><button class="btn" id="winMap">למפה</button></div>`);
   const nb = document.getElementById('winNext');
   if (nb) nb.onclick = () => { hideCard(); startLevel(next!.id); };
   const mb = document.getElementById('winMore');
@@ -471,6 +505,9 @@ function clearLevel(): void {
   for (const c of chunks) worldFx.remove(c.m);
   chunks.length = 0;
   view = null;
+  intro = null;
+  $('intro').hidden = true;
+  document.body.classList.remove('intro');
   flushLearn(sim);
   sim = null;
   audio.alarm(false);
@@ -521,11 +558,35 @@ function enterLevel(l: Level): void {
   r.visible = true;
   r.position.set(l.exit.pos[0] + 0.6, l.exit.pos[1], l.exit.pos[2] + 0.4);
   view.raccoon.play(['idle', 'wave', 'breath']);
-  if (l.tutorial?.length) showTutorial(l);
-  else {
-    showToast(l.objective, '', 3200);
-    hideCard();
-  }
+  hideCard();
+  // Cinematic establishing shot: from high behind the spawn, down to eye level, while the
+  // title, hall and difficulty show. Any key or click skips it.
+  const t0 = l.targets[0];
+  const sp = new THREE.Vector3(l.spawn.pos[0], EYE, l.spawn.pos[1]);
+  const back = new THREE.Vector3(Math.sin(l.spawn.yaw), 0, Math.cos(l.spawn.yaw));
+  const look = new THREE.Vector3(...t0.zone.c);
+  // Start up high, a third of the way from the spawn to the target, then pull back down to the eye.
+  const from = sp.clone().lerp(new THREE.Vector3(look.x, sp.y, look.z), 0.35).setY(Math.min(l.room.h - 0.6, 4.6));
+  void back;
+  intro = { t: 0, dur: reduced ? 1.2 : 3.2, from, look };
+  const w = WORLDS.find((x) => x.id === l.world)!;
+  $('introWorld').innerHTML = html(`${w.title} · ${w.tier}`);
+  $('introNum').innerHTML = l.id > 0 ? html(`שלב ⟦${l.id}⟧`) : 'חדר אתגר';
+  $('introTitle').innerHTML = html(l.title);
+  $('introObj').innerHTML = html(l.objective);
+  $('intro').hidden = false;
+  $('intro').classList.remove('out');
+  document.body.classList.add('intro');
+}
+
+function endIntro(): void {
+  if (!intro || !level) return;
+  intro = null;
+  document.body.classList.remove('intro');
+  $('intro').classList.add('out');
+  setTimeout(() => { if (!intro) $('intro').hidden = true; }, 450);
+  controls.clear();
+  if (!showBriefing(level)) showToast(level.objective, '', 3000);
 }
 
 function openMenu(): void {
@@ -568,13 +629,27 @@ function renderMenuDom(): void {
     nodes.appendChild(b);
   }
   const halls = $('halls');
-  halls.innerHTML = WORLDS.map((w) => `<div class="hall" data-w="${w.id}">${html(w.title)}</div>`).join('');
+  halls.innerHTML = WORLDS.map((w) => `<div class="hall" data-w="${w.id}">${html(w.title)}<span class="htier">${html(w.tier)}</span></div>`).join('');
+  // A challenge node per cleared hall: fresh solver-checked rooms with new numbers.
+  for (const w of WORLDS) {
+    if (w.id === 5) continue;
+    const cleared = LEVELS.filter((x) => x.world === w.id).every((x) => (save.stars[x.id] ?? 0) > 0);
+    if (!cleared && !unlockAll) continue;
+    const b = document.createElement('button');
+    b.className = 'node challenge';
+    b.dataset.challenge = String(w.id);
+    const n = save.challenges[w.id] ?? 0;
+    b.innerHTML = `★<span class="nstars">אתגר${n ? ` · <bdi dir="ltr">${n}</bdi>` : ''}</span>`;
+    b.setAttribute('aria-label', `חדר אתגר ב${w.title}`);
+    b.onclick = () => { audio.unlock(); startGenerated(w.id); };
+    nodes.appendChild(b);
+  }
   if (!unlocked(selected)) selected = firstOpen;
   const l = levelById(selected);
   const w = WORLDS.find((x) => x.id === l.world)!;
   const transfer = [5, 10, 15, 18].includes(l.id);
   const genOk = LEVELS.filter((x) => x.world === l.world).every((x) => (save.stars[x.id] ?? 0) > 0) && l.world < 5;
-  $('levelCard').innerHTML = `<h3>${html(`שלב ⟦${l.id}⟧ · ${l.title}`)}${l.extension ? '<span class="tag">הרחבה</span>' : ''}${transfer ? '<span class="tag">העברה</span>' : ''}</h3><p>${html(w.title)} — ${html(w.subtitle)}</p><p>${html(l.objective)}</p><div class="cstars">${starsHtml(save.stars[l.id] ?? 0)}</div>${genOk ? `<button class="btn" id="btnGen">חדר חדש ב${html(w.title)}</button>` : ''}`;
+  $('levelCard').innerHTML = `<h3>${html(`שלב ⟦${l.id}⟧ · ${l.title}`)}${l.extension ? '<span class="tag">הרחבה</span>' : ''}${transfer ? '<span class="tag">העברה</span>' : ''}</h3><p><span class="tag">${html(w.tier)}</span> ${html(w.title)} — ${html(w.subtitle)}</p><p>${html(l.objective)}</p><p class="skillline">${html(l.skill)}</p><div class="cstars">${starsHtml(save.stars[l.id] ?? 0)}</div>${genOk ? `<button class="btn" id="btnGen">חדר חדש ב${html(w.title)}</button>` : ''}`;
   const gb = document.getElementById('btnGen');
   if (gb) gb.onclick = () => { audio.unlock(); startGenerated(l.world); };
   $('btnContinue').innerHTML = html(`${save.stars[l.id] ? 'שחקו שוב' : 'המשך'} · שלב ⟦${l.id}⟧ ‹`);
@@ -587,7 +662,7 @@ function positionMenuDom(): void {
   const w = app.clientWidth, h = app.clientHeight;
   const v = new THREE.Vector3();
   for (const el of Array.from($('nodes').children) as HTMLElement[]) {
-    const p = menu.nodePos.get(Number(el.dataset.id));
+    const p = el.dataset.challenge ? menu.hallPos.get(Number(el.dataset.challenge))?.clone().add(new THREE.Vector3(1.6, -0.6, 0.9)) : menu.nodePos.get(Number(el.dataset.id));
     if (!p) continue;
     v.copy(p).project(menu.camera);
     el.style.left = `${((v.x + 1) / 2) * w}px`;
@@ -611,14 +686,16 @@ $('menuMotion').onclick = () => { reduced = !reduced; save.reduced = reduced; do
 $('tAct').addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); audio.unlock(); if (sim?.phase === 'explain') { sim.dismiss(); hideCard(); } else controls.pressAct(); });
 $('tRot').addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); controls.pressRotate(); });
 $('tClimb').addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); controls.pressClimb(); });
-canvas.addEventListener('mousedown', () => audio.unlock());
-canvas.addEventListener('touchstart', () => audio.unlock());
+canvas.addEventListener('mousedown', () => { audio.unlock(); if (intro) endIntro(); });
+$('intro').addEventListener('click', () => { audio.unlock(); endIntro(); });
+canvas.addEventListener('touchstart', () => { audio.unlock(); if (intro) endIntro(); });
 controls.onKey = (code) => {
   audio.unlock();
   if (mode !== 'play') {
     if (mode === 'menu' && code === 'Enter') startLevel(selected);
     return;
   }
+  if (intro) { endIntro(); return; }
   if (code === 'KeyP' || code === 'Escape') {
     if (cardKind) return;
     paused ? resume() : showPause();
@@ -780,6 +857,16 @@ function syncView(dt: number, realtime: boolean): void {
     camera.rotation.z += (Math.random() - 0.5) * shake * 0.1;
   }
   shake = Math.max(0, shake - dt * 0.8);
+  if (intro) {
+    const k = Math.min(1, intro.t / intro.dur);
+    const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+    const eyeQ = camera.quaternion.clone();
+    const eyeP = camera.position.clone();
+    camera.position.copy(intro.from).lerp(eyeP, e);
+    const m = new THREE.Matrix4().lookAt(camera.position, intro.look, new THREE.Vector3(0, 1, 0));
+    const lookQ = new THREE.Quaternion().setFromRotationMatrix(m);
+    camera.quaternion.copy(lookQ).slerp(eyeQ, Math.max(0, (e - 0.35) / 0.65));
+  }
   camera.updateMatrixWorld();
 
   // Exhibits.
@@ -1147,7 +1234,11 @@ function frame(now: number): void {
   fpsT += dt;
   if (fpsT > 1) { fps = fpsFrames / fpsT; fpsFrames = 0; fpsT = 0; }
   if (mode === 'play' && sim) {
-    const blocked = paused || cardKind === 'tutorial' || cardKind === 'win';
+    if (intro && !paused) {
+      intro.t += dt;
+      if (intro.t >= intro.dur) endIntro();
+    }
+    const blocked = paused || cardKind === 'tutorial' || cardKind === 'win' || !!intro;
     if (!manual && !blocked) {
       const input = controls.read();
       if (cardKind === 'fail') input.act = false;
@@ -1185,6 +1276,7 @@ window.render_game_to_text = () => {
 };
 window.advanceTime = (ms: number) => {
   manual = true;
+  if (intro) endIntro();
   if (mode !== 'play' || !sim || paused || cardKind === 'tutorial' || cardKind === 'win') return;
   const steps = Math.max(1, Math.round(ms / (1000 * STEP)));
   stepSim(controls.read(), steps);

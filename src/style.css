@@ -164,7 +164,7 @@ body.touch .chip { bottom: auto; top: 120px; right: 16px; }
 .node.current { border-color: #fff1b0; box-shadow: 0 0 0 2px #000, 0 0 20px rgba(255, 215, 110, 0.95); animation: pulse 0.9s infinite alternate; }
 .node.sel { outline: 3px solid #fff; outline-offset: 2px; }
 .hall { position: absolute; transform: translate(-50%, -50%); padding: 6px 14px; border-radius: 8px; background: rgba(10, 8, 6, 0.85); border: 2px solid var(--gold2); font-weight: 700; font-size: 18px; white-space: nowrap; pointer-events: none; }
-.levelCard { position: absolute; left: 18px; bottom: 18px; width: min(360px, 40cqw); padding: 14px 18px; border-radius: 14px; background: var(--panel); border: 2px solid var(--gold2); pointer-events: auto; }
+.levelCard { position: absolute; left: 18px; bottom: 18px; width: min(320px, 34cqw); padding: 14px 18px; border-radius: 14px; background: var(--panel); border: 2px solid var(--gold2); pointer-events: auto; }
 .levelCard h3 { margin: 0 0 6px; font-size: 22px; }
 .levelCard p { margin: 4px 0; font-size: 15px; line-height: 1.4; color: rgba(244, 234, 210, 0.85); }
 .levelCard .cstars { font-size: 26px; color: var(--gold); }
@@ -217,3 +217,44 @@ body.touch .chip { bottom: auto; top: 120px; right: 16px; }
   .hidechip, .node.current, #vignette.on { animation: none; }
 }
 body.reduced .hidechip, body.reduced .node.current, body.reduced #vignette.on, body.reduced .bigstars span { animation: none; }
+
+/* ─── level intro (letterbox) ─── */
+#intro { position: absolute; inset: 0; z-index: 4; cursor: pointer; }
+#intro .lb { position: absolute; left: 0; right: 0; height: 11%; background: #000; animation: lbIn 0.5s ease-out both; }
+#intro .lb.top { top: 0; } #intro .lb.bottom { bottom: 0; }
+body.intro #hud { opacity: 0; transition: opacity 0.4s; }
+#hud { transition: opacity 0.6s; }
+@keyframes lbIn { from { height: 0; } }
+#intro.out { animation: fadeOut 0.45s forwards; }
+@keyframes fadeOut { to { opacity: 0; } }
+.introText { position: absolute; right: 7cqw; bottom: 15%; text-align: right; animation: slideIn 0.9s 0.25s ease-out both; text-shadow: 0 3px 12px rgba(0, 0, 0, 0.9); max-width: 70cqw; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(-30px); } }
+.introWorld { display: inline-block; padding: 4px 14px; border-radius: 999px; border: 2px solid var(--gold2); background: rgba(10, 8, 6, 0.75); color: var(--gold); font-weight: 700; font-size: 18px; }
+.introNum { margin-top: 10px; font-size: 22px; color: rgba(244, 234, 210, 0.85); font-weight: 500; }
+.introTitle { font-size: 64px; font-weight: 800; line-height: 1.05; background: linear-gradient(#fff6d8, #e8b84a); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.8)); }
+.introObj { margin-top: 8px; font-size: 20px; color: #f4ead2; }
+.introSkip { position: absolute; left: 24px; bottom: 3%; font-size: 14px; color: rgba(255, 255, 255, 0.55); z-index: 1; }
+/* ─── hall banner + results ─── */
+.hallbanner { margin: -6px -8px 14px; padding: 12px 14px; border-radius: 12px; background: linear-gradient(135deg, rgba(232, 200, 115, 0.18), rgba(232, 200, 115, 0.04)); border: 1px solid rgba(232, 200, 115, 0.5); }
+.hallbanner .tier { display: inline-block; font-size: 14px; padding: 2px 10px; border-radius: 999px; background: var(--gold); color: #2a1904; font-weight: 800; }
+.hallbanner h2 { margin: 6px 0 2px; }
+.hallbanner .sub { color: var(--gold); margin: 0 0 6px; }
+.card h3 { margin: 6px 0; font-size: 24px; color: #fff; }
+.wintitle { font-size: 20px; margin: 4px 0 10px; }
+.results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0; }
+.results > div { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(232, 200, 115, 0.35); border-radius: 10px; padding: 8px 6px; display: flex; flex-direction: column; gap: 2px; }
+.results .rl { font-size: 13px; color: rgba(244, 234, 210, 0.7); }
+.results .rv { font-size: 24px; font-weight: 800; color: var(--gold); }
+.results .rv.small { font-size: 14px; font-weight: 500; color: #f4ead2; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 6px 0; }
+.badges span { font-size: 14px; padding: 4px 10px; border-radius: 999px; background: rgba(111, 220, 140, 0.15); border: 1px solid rgba(111, 220, 140, 0.6); }
+.skill { font-size: 15px !important; color: rgba(244, 234, 210, 0.8); }
+.unlock { margin: 8px 0; padding: 8px; border-radius: 10px; border: 1px dashed var(--gold); font-size: 18px; }
+.htier { display: block; font-size: 12px; font-weight: 500; color: var(--gold); text-align: center; }
+.node.challenge { width: 52px; height: 52px; font-size: 24px; color: #2a1904; background: radial-gradient(circle at 40% 30%, #fff1b0, #c9902a); border-color: #fff1b0; }
+.node.challenge .nstars { color: #fff1b0; font-size: 12px; }
+.skillline { font-size: 13px !important; color: var(--gold) !important; }
+@container (max-width: 700px) {
+  .introTitle { font-size: 38px; } .introObj { font-size: 15px; } .introWorld { font-size: 14px; }
+  .results .rv { font-size: 18px; }
+}

@@ -127,14 +127,33 @@ export interface World {
   title: string;
   subtitle: string;
   theme: Theme;
+  /** Difficulty tier shown on the map and in the hall banner. */
+  tier: string;
+  /** One or two lines shown when you enter the hall for the first time. */
+  intro: string[];
 }
 
 export const WORLDS: World[] = [
-  { id: 1, title: 'אולם האורכים', subtitle: 'יחס דמיון וצלעות מתאימות', theme: 'lengths' },
-  { id: 2, title: 'אולם הצללים', subtitle: 'משולשים דומים לפי ז.ז.', theme: 'shadows' },
-  { id: 3, title: 'אולם הבד והשטיח', subtitle: 'יחס היקפים ויחס שטחים', theme: 'canvas' },
-  { id: 4, title: 'הכספת', subtitle: 'הרחבה: נפח · חפיפה מול דמיון', theme: 'vault' },
-  { id: 5, title: 'היציאה הגדולה', subtitle: 'הגג, עם שחר — בלי רמזים', theme: 'rooftop' },
+  {
+    id: 1, title: 'אולם האורכים', subtitle: 'יחס דמיון וצלעות מתאימות', theme: 'lengths', tier: 'מתחילים',
+    intro: ['כל אורך מוכפל ביחס הדמיון ⟦k = d₂ ÷ d₁⟧.', 'מגדילים, מקטינים, ובוחרים איזו צלע מתאימה לאיזו.'],
+  },
+  {
+    id: 2, title: 'אולם הצללים', subtitle: 'משולשים דומים לפי ז.ז.', theme: 'shadows', tier: 'בינוני',
+    intro: ['כאן לא כתוב כמה גבוה היעד: מוצאים אותו ממשולשים דומים — צללים, לייזר, חבל.', 'קודם הגובה, אחר כך ⟦k⟧.'],
+  },
+  {
+    id: 3, title: 'אולם הבד והשטיח', subtitle: 'יחס היקפים ויחס שטחים', theme: 'canvas', tier: 'מתקדם',
+    intro: ['היקף גדל פי ⟦k⟧, אבל שטח גדל פי ⟦k²⟧.', 'שימו לב מה כתוב על הלוחית: היקף או שטח?'],
+  },
+  {
+    id: 4, title: 'הכספת', subtitle: 'הרחבה: נפח · חפיפה מול דמיון', theme: 'vault', tier: 'מומחה · הרחבה',
+    intro: ['הרחבה: נפח ומשקל גדלים פי ⟦k³⟧.', 'וחפיפה היא דמיון ביחס ⟦k = 1⟧.'],
+  },
+  {
+    id: 5, title: 'היציאה הגדולה', subtitle: 'הגג, עם שחר — בלי רמזים', theme: 'rooftop', tier: 'אתגר סופי',
+    intro: ['שלושה צעדים, שומר מסייר ובלי רמזים.', 'השומר זז רק כשאתם זזים — עצרו כדי לחשוב.'],
+  },
 ];
 
 const len = (value: number, label: string, unit: Measure['unit'] = 'm'): Measure => ({ value, power: 1, unit, label });

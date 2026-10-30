@@ -177,6 +177,8 @@ export class Sim {
   private stepDist = 0;
   private attempts = new Map<string, number>();
   decor: DecorCase[] = [];
+  /** Every successful drop: how close k was to the exact ratio (1 = perfect). */
+  fits: { targetId: string; k: number; kNeeded: number; accuracy: number; firstTry: boolean }[] = [];
 
   constructor(levelOrId: Level | number) {
     this.level = typeof levelOrId === 'number' ? LEVELS.find((l) => l.id === levelOrId)! : levelOrId;
@@ -489,6 +491,7 @@ export class Sim {
       else if (check.verdict === 'noFit') kind = 'noFit';
       this.learn({ action: 'drop', exId: ex.def.id, targetId: t.id, d1, d2, k, kNeeded: check.kNeeded, outcome: kind ?? 'fit', attempt, firstUnaided: attempt === 1 && !this.hintShown });
       if (!kind) {
+        this.fits.push({ targetId: t.id, k, kNeeded: check.kNeeded, accuracy: Math.max(0, 1 - Math.abs(k - check.kNeeded) / check.kNeeded), firstTry: attempt === 1 && !this.hintShown });
         this.whoosh = { exId: ex.def.id, from: { scale: ex.scale }, to: [...t.anchor] as V3, yaw: t.yaw, newScale, t: 0, dur: 0.45, verdict: 'fit' };
         this.setPhase('whoosh');
         return true;

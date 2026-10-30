@@ -22,7 +22,7 @@ async function open(level, { width = 1280, height = 720, touch = false } = {}) {
   await page.goto(`${base}?unlock=all${level ? `&level=${level}` : ''}`, { waitUntil: 'domcontentloaded', timeout: 90000 });
   await page.waitForFunction(() => window.render_game_to_text && JSON.parse(window.render_game_to_text()).mode !== 'loading', null, { timeout: 60000 });
   await page.evaluate(autopilot);
-  await page.evaluate(() => { document.querySelector('#tutGo')?.click(); window.advanceTime(16); });
+  await page.evaluate(() => { window.advanceTime(16); document.querySelector('#tutGo')?.click(); window.advanceTime(16); });
   return { ctx, page };
 }
 async function shot(page, name) {
@@ -218,6 +218,26 @@ const scenarios = {
     const { ctx, page } = await open(3);
     await run(() => { AP.walkTo(0, 2.0); AP.turnTo(0); AP.pitchTo(-0.45); })(page);
     await shot(page, 'debug-pit');
+    await ctx.close();
+  },
+  async intro() {
+    for (const id of [1, 6]) {
+      const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+      const page = await ctx.newPage();
+      await page.goto(`${base}?unlock=all&level=${id}`, { waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() => window.render_game_to_text && JSON.parse(window.render_game_to_text()).mode === 'play', null, { timeout: 60000 });
+      await page.waitForTimeout(1600);
+      await page.screenshot({ path: `${out}/intro-${id}.png` });
+      await page.waitForTimeout(2600);
+      await page.screenshot({ path: `${out}/briefing-${id}.png` });
+      await ctx.close();
+    }
+  },
+  async win() {
+    const { ctx, page } = await open(1);
+    await run(() => { AP.walkTo(-2.5, 2); AP.aimAt(-2.5, 1.25, 0); AP.act(); AP.tick(200); AP.walkTo(0, 1.78); AP.aimAt(0, 0.8, -4.2); AP.act(); AP.tick(800); AP.key('KeyW', true); for (let i = 0; i < 60 && AP.S().phase !== 'won'; i++) AP.tick(100); AP.key('KeyW', false); AP.tick(200); })(page);
+    await page.waitForTimeout(1800);
+    await page.screenshot({ path: `${out}/win-1.png` });
     await ctx.close();
   },
   async mobile() {

@@ -165,7 +165,7 @@ export function buildMenu(): MenuView {
       const fog = scene.fog as THREE.Fog;
       fog.near = dist * 1.1;
       fog.far = dist * 2.6;
-      camera.lookAt(0.5, 0, -0.4);
+      camera.lookAt(0.5, 0, 1.4);
       const p = nodePos.get(current);
       if (p) {
         raccoon.root.position.set(p.x + 0.45, 0.47, p.z + 0.1);
