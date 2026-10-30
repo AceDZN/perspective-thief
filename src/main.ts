@@ -45,13 +45,13 @@ function starsHtml(n: number, of = 3): string {
 // ─────────────── persistence ───────────────
 const KEY = 'perspective-thief:v1';
 const LEARN = 'perspective-thief:learn';
-interface Save { stars: Record<number, number>; reduced: boolean; muted: boolean; current: number; challenges: Record<number, number>; seenWorlds: number[] }
+interface Save { stars: Record<number, number>; reduced: boolean; muted: boolean; current: number; challenges: Record<number, number>; seenWorlds: number[]; sens: number }
 function loadSave(): Save {
   try {
     const s = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-    return { stars: s.stars ?? {}, reduced: !!s.reduced, muted: !!s.muted, current: s.current ?? 1, challenges: s.challenges ?? {}, seenWorlds: s.seenWorlds ?? [] };
+    return { stars: s.stars ?? {}, reduced: !!s.reduced, muted: !!s.muted, current: s.current ?? 1, challenges: s.challenges ?? {}, seenWorlds: s.seenWorlds ?? [], sens: s.sens ?? 1 };
   } catch {
-    return { stars: {}, reduced: false, muted: false, current: 1, challenges: {}, seenWorlds: [] };
+    return { stars: {}, reduced: false, muted: false, current: 1, challenges: {}, seenWorlds: [], sens: 1 };
   }
 }
 const save = loadSave();
@@ -162,6 +162,7 @@ canvas.addEventListener('webglcontextrestored', () => { paused = false; });
 const audio = new Audio();
 audio.muted = save.muted;
 const controls = new Controls(canvas, $('stick'), $('knob'));
+controls.sensitivity = 0.0022 * save.sens;
 let mode: 'loading' | 'menu' | 'play' = 'loading';
 let menu: MenuView | null = null;
 let selected = save.current;
@@ -476,6 +477,7 @@ function showPause(): void {
   <p class="stats">${html(level?.objective ?? '')}</p>
   <label class="toggle"><input type="checkbox" id="optReduced" ${reduced ? 'checked' : ''}> הפחתת תנועה</label>
   <label class="toggle"><input type="checkbox" id="optMute" ${audio.muted ? 'checked' : ''}> השתקה</label>
+  <label class="toggle">רגישות העכבר <input type="range" id="optSens" min="0.4" max="2.2" step="0.1" value="${save.sens}"></label>
   <p class="stats">תנועה: <span class="ltr">WASD</span> / חיצים · עכבר להסתכל · לחיצה לתפוס/להניח · <span class="ltr">R</span> לסובב · <span class="ltr">Shift</span> לאט · רווח לטפס · <span class="ltr">H</span> רמז</p>
   <div class="row"><button class="btn primary" id="pResume">המשך</button><button class="btn" id="pRestart">התחלה מחדש</button><button class="btn" id="pMap">למפה</button></div></div>`;
   $('pResume').onclick = resume;
@@ -483,6 +485,7 @@ function showPause(): void {
   $('pMap').onclick = () => { resume(); openMenu(); };
   $<HTMLInputElement>('optReduced').onchange = (e) => { reduced = (e.target as HTMLInputElement).checked; save.reduced = reduced; document.body.classList.toggle('reduced', reduced); persist(); };
   $<HTMLInputElement>('optMute').onchange = (e) => setMuted((e.target as HTMLInputElement).checked);
+  $<HTMLInputElement>('optSens').oninput = (e) => { save.sens = Number((e.target as HTMLInputElement).value); controls.sensitivity = 0.0022 * save.sens; persist(); };
   $('pResume').focus();
 }
 function resume(): void {
