@@ -937,7 +937,7 @@ export const LEVELS: Level[] = [
       { origin: [-3, -3.5], dir: 0, from: 1.5, to: 9.5 },
       { origin: [3.5, -3.5], dir: 0, from: 1, to: 9.5 },
     ],
-    hides: [[0, 4.4]],
+    hides: [[5.6, 5.8]],
     guardDoor: [0, -7],
     exit: { pos: [6.4, 0, 0], r: 0.9 },
     hint: ['לולאה: היקף מול היקף → ⟦k⟧. לוחית: שטח מול שטח → ⟦k²⟧.'],
@@ -1109,7 +1109,7 @@ export const LEVELS: Level[] = [
     rulers: [{ origin: [0, -5.9], dir: 0, from: 1, to: 11 }],
     hides: [[-4.5, 3]],
     guardDoor: [6, 2],
-    exit: { pos: [0, 0, -5.45], r: 0.55 },
+    exit: { pos: [4.3, 0, -5.2], r: 0.8 },
     hint: ['השוו את אורך המפתח עכשיו ⟦24⟧ לאורך המקורי ⟦12⟧ — יחס אורכים. איזה ⟦k⟧ מחזיר אותו ליחס ⟦1⟧ (חפיפה)?'],
   },
 

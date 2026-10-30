@@ -73,22 +73,102 @@ export function marbleTexture(tint: 'white' | 'grey' | 'dark' | 'teal' | 'red' |
   });
 }
 
-/** Checkerboard marble floor tiles (1 tile per metre when repeat = room size / 2). */
+/** Per-theme floor (one texture = 2 m × 2 m): marble slabs with inlays, parquet, carpet-marble, vault stone. */
 export function floorTexture(theme: string): THREE.CanvasTexture {
   return cached('floor-' + theme, () => {
-    const [c, g] = canvas(1024, 1024);
-    const a = theme === 'vault' ? 'teal' : theme === 'canvas' ? 'red' : theme === 'shadows' ? 'grey' : theme === 'rooftop' ? 'rose' : 'white';
-    const b = theme === 'canvas' ? 'dark' : theme === 'vault' ? 'dark' : theme === 'rooftop' ? 'grey' : 'dark';
-    const ta = marbleTexture(a as 'white').image as HTMLCanvasElement;
-    const tb = marbleTexture(b as 'white').image as HTMLCanvasElement;
-    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) g.drawImage((i + j) % 2 ? tb : ta, i * 512, j * 512);
-    g.strokeStyle = 'rgba(170,140,80,0.55)';
-    g.lineWidth = 4;
-    for (let i = 0; i <= 2; i++) {
-      g.beginPath(); g.moveTo(i * 512, 0); g.lineTo(i * 512, 1024); g.stroke();
-      g.beginPath(); g.moveTo(0, i * 512); g.lineTo(1024, i * 512); g.stroke();
+    const N = 1024;
+    const [c, g] = canvas(N, N);
+    const r = rng(theme.length * 31 + 7);
+    const slab = (tint: 'white' | 'grey' | 'dark' | 'teal' | 'red' | 'rose', x: number, y: number, w: number, h: number) => {
+      const t = marbleTexture(tint).image as HTMLCanvasElement;
+      g.drawImage(t, Math.floor(r() * 256), Math.floor(r() * 256), 256, 256, x, y, w, h);
+    };
+    if (theme === 'shadows') {
+      // Herringbone oak parquet.
+      g.fillStyle = '#5a3a20';
+      g.fillRect(0, 0, N, N);
+      const bw = 64, bl = 256;
+      for (let row = -4; row < 20; row++) {
+        for (let col = -4; col < 20; col++) {
+          const x = col * bw + row * bw, y = row * bw - col * bw;
+          for (const vertical of [false, true]) {
+            g.save();
+            g.translate(x + (vertical ? bw : 0), y);
+            const shade = 60 + Math.floor(r() * 40);
+            g.fillStyle = `rgb(${shade + 70},${shade + 32},${shade - 10})`;
+            if (vertical) g.fillRect(0, 0, bw, bl); else g.fillRect(-bl + bw, 0, bl, bw);
+            g.strokeStyle = 'rgba(30,15,5,0.7)';
+            g.lineWidth = 3;
+            if (vertical) g.strokeRect(0, 0, bw, bl); else g.strokeRect(-bl + bw, 0, bl, bw);
+            g.restore();
+          }
+        }
+      }
+      for (let i = 0; i < 1600; i++) {
+        g.fillStyle = `rgba(30,15,5,${r() * 0.12})`;
+        g.fillRect(r() * N, r() * N, 1 + r() * 40, 1);
+      }
+      return tex(c);
+    }
+    const scheme: Record<string, ['white' | 'grey' | 'dark' | 'teal' | 'red' | 'rose', 'white' | 'grey' | 'dark' | 'teal' | 'red' | 'rose', string]> = {
+      lengths: ['white', 'dark', 'rgba(150,120,60,0.9)'],
+      canvas: ['red', 'dark', 'rgba(220,180,90,0.95)'],
+      vault: ['teal', 'dark', 'rgba(200,170,90,0.9)'],
+      rooftop: ['rose', 'grey', 'rgba(120,90,70,0.6)'],
+    };
+    const [a, b, line] = scheme[theme] ?? scheme.lengths;
+    // Four big slabs per tile.
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) slab(a, i * 512, j * 512, 512, 512);
+    // Diamond inlay of the second marble at every slab corner.
+    const d = 92;
+    for (const [x, y] of [[0, 0], [512, 0], [1024, 0], [0, 512], [512, 512], [1024, 512], [0, 1024], [512, 1024], [1024, 1024]]) {
+      g.save();
+      g.beginPath();
+      g.moveTo(x, y - d); g.lineTo(x + d, y); g.lineTo(x, y + d); g.lineTo(x - d, y); g.closePath();
+      g.clip();
+      slab(b, x - d, y - d, 2 * d, 2 * d);
+      g.restore();
+      g.strokeStyle = line;
+      g.lineWidth = 5;
+      g.beginPath();
+      g.moveTo(x, y - d); g.lineTo(x + d, y); g.lineTo(x, y + d); g.lineTo(x - d, y); g.closePath();
+      g.stroke();
+    }
+    // Thin brass joints + a soft polish highlight.
+    g.strokeStyle = line;
+    g.lineWidth = 3;
+    for (const v of [0, 512, 1024]) {
+      g.beginPath(); g.moveTo(v, 0); g.lineTo(v, N); g.stroke();
+      g.beginPath(); g.moveTo(0, v); g.lineTo(N, v); g.stroke();
     }
     return tex(c);
+  });
+}
+
+/** Cut-stone blocks for big plain faces (mezzanines, balconies, tower). */
+export function stoneBlockTexture(tint = '#b9b4aa'): THREE.CanvasTexture {
+  return cached('stoneblock-' + tint, () => {
+    const [c, g] = canvas(512, 512);
+    g.fillStyle = tint;
+    g.fillRect(0, 0, 512, 512);
+    const r = rng(17);
+    const bh = 128;
+    for (let row = 0; row < 4; row++) {
+      const off = row % 2 ? 128 : 0;
+      for (let x = -off; x < 512; x += 256) {
+        const l = 0.85 + r() * 0.25;
+        g.fillStyle = `rgba(${Math.round(255 * l)},${Math.round(250 * l)},${Math.round(240 * l)},0.18)`;
+        g.fillRect(x + 4, row * bh + 4, 248, bh - 8);
+        g.strokeStyle = 'rgba(40,35,30,0.55)';
+        g.lineWidth = 6;
+        g.strokeRect(x + 2, row * bh + 2, 252, bh - 4);
+      }
+    }
+    for (let i = 0; i < 3000; i++) {
+      g.fillStyle = `rgba(0,0,0,${r() * 0.08})`;
+      g.fillRect(r() * 512, r() * 512, 2, 2);
+    }
+    return tex(c, [1, 1]);
   });
 }
 

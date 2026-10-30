@@ -186,6 +186,40 @@ const scenarios = {
     await page.screenshot({ path: `${out}/00-menu-mobile.png` });
     await ctx.close();
   },
+  async starts() {
+    // Spawn view of every level, looking at the first target, then aiming from the solver's stand while carrying.
+    const ids = (process.env.LEVELS ?? Array.from({ length: 18 }, (_, i) => i + 1).join(',')).split(',').map(Number);
+    for (const id of ids) {
+      const { ctx, page } = await open(id);
+      await page.evaluate(async (id) => {
+        const { levelById } = await import('/src/levels.ts');
+        const L = levelById(id);
+        const t = L.targets[0];
+        AP.aimAt(...t.zone.c);
+      }, id);
+      await shot(page, `start-${String(id).padStart(2, '0')}`);
+      await page.evaluate(async (id) => {
+        const { plan } = await import('/src/solver.ts');
+        const { levelById } = await import('/src/levels.ts');
+        const L = levelById(id);
+        const st = plan(L)[0];
+        const def = L.exhibits.find((e) => e.id === st.exId);
+        AP.walkTo(st.pad[0], st.pad[1]);
+        AP.aimAt(def.pos[0], def.pedestal + 0.2, def.pos[1]);
+        AP.act(); AP.tick(100);
+        AP.walkTo(st.stand[0], st.stand[1], 0.02);
+        AP.aimAt(...st.target.zone.c);
+      }, id);
+      await shot(page, `aim-${String(id).padStart(2, '0')}`);
+      await ctx.close();
+    }
+  },
+  async pit() {
+    const { ctx, page } = await open(3);
+    await run(() => { AP.walkTo(0, 2.0); AP.turnTo(0); AP.pitchTo(-0.45); })(page);
+    await shot(page, 'debug-pit');
+    await ctx.close();
+  },
   async mobile() {
     const { ctx, page } = await open(1, { width: 390, height: 844, touch: true });
     await run(() => { AP.aimAt(-2.5, 1.1, 0); })(page);

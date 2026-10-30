@@ -19,6 +19,7 @@ import {
   rugTexture,
   rulerTexture,
   skyTexture,
+  stoneBlockTexture,
   velvetTexture,
   wallTexture,
   woodTexture,
@@ -300,6 +301,7 @@ export interface LevelView {
   pedestals: Map<string, THREE.Object3D>;
   placards: Map<string, THREE.Mesh>;
   ventFans: THREE.Object3D[];
+  dust: THREE.Points;
   sky: THREE.Texture;
 }
 
@@ -338,13 +340,23 @@ export function buildLevel(level: Level): LevelView {
     root.add(f);
   }
   for (const p of pits) {
-    const pit = boxAt([p.min[0], -6, p.min[1]], [p.max[0], -0.01, p.max[1]], M.void());
-    (pit.material as THREE.Material).side = THREE.BackSide;
+    const pit = boxAt([p.min[0], -6, p.min[1]], [p.max[0], -0.01, p.max[1]], mat('pitWalls', () => new THREE.MeshStandardMaterial({ map: stoneBlockTexture('#3a3640'), color: '#5a5660', roughness: 0.95, side: THREE.BackSide })));
+    pit.castShadow = false;
+    // Brass lip along both edges of the chasm.
+    root.add(boxAt([p.min[0], -0.02, p.min[1] - 0.06], [p.max[0], 0.03, p.min[1] + 0.02], M.brass()));
+    root.add(boxAt([p.min[0], -0.02, p.max[1] - 0.02], [p.max[0], 0.03, p.max[1] + 0.06], M.brass()));
     root.add(pit);
+    // Darkness layers: the deeper you look, the blacker it gets.
+    for (const [y, op] of [[-0.5, 0.45], [-1.2, 0.55], [-2.2, 0.7], [-3.5, 0.85]] as [number, number][]) {
+      const dark = new THREE.Mesh(new THREE.PlaneGeometry(p.max[0] - p.min[0], p.max[1] - p.min[1]), new THREE.MeshBasicMaterial({ color: '#000004', transparent: true, opacity: op, depthWrite: false }));
+      dark.rotation.x = -Math.PI / 2;
+      dark.position.set((p.min[0] + p.max[0]) / 2, y, (p.min[1] + p.max[1]) / 2);
+      root.add(dark);
+    }
     // Glowing chasm haze.
     const haze = new THREE.Mesh(new THREE.PlaneGeometry(p.max[0] - p.min[0], p.max[1] - p.min[1]), new THREE.MeshBasicMaterial({ color: '#3a5cff', transparent: true, opacity: 0.12, depthWrite: false, blending: THREE.AdditiveBlending }));
     haze.rotation.x = -Math.PI / 2;
-    haze.position.set((p.min[0] + p.max[0]) / 2, -2.5, (p.min[1] + p.max[1]) / 2);
+    haze.position.set((p.min[0] + p.max[0]) / 2, -3.0, (p.min[1] + p.max[1]) / 2);
     root.add(haze);
   }
 
@@ -413,6 +425,69 @@ export function buildLevel(level: Level): LevelView {
         art.position.set(x - side * 0.035, 1.3 + ph / 2 + 0.3, z);
         art.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
         root.add(art);
+      }
+    }
+    // Marble pilasters with brass capitals along the walls (skipping doors, windows, wall targets).
+    const avoid: V2[] = [level.guardDoor, [level.exit.pos[0], level.exit.pos[2]], ...level.targets.map((t) => [t.anchor[0], t.anchor[2]] as V2)];
+    for (const pr of level.props) if (pr.kind === 'window') avoid.push([pr.pos[0], pr.pos[2]]);
+    const pilMat = mat('pilaster', () => new THREE.MeshStandardMaterial({ map: marbleTexture('white'), color: R.theme === 'canvas' ? '#d8c4b4' : R.theme === 'vault' ? '#9fb8b4' : R.theme === 'shadows' ? '#c8b494' : '#c4c8d4', roughness: 0.3 }));
+    const pilaster = (x: number, z: number, yaw: number) => {
+      if (avoid.some((a) => Math.hypot(a[0] - x, a[1] - z) < 1.3)) return;
+      if (level.props.some((pr) => pr.kind === 'solid' && x > pr.min[0] - 0.4 && x < pr.max[0] + 0.4 && z > pr.min[2] - 0.4 && z < pr.max[2] + 0.4 && pr.max[1] > 1.2)) return;
+      const g = new THREE.Group();
+      const shaft = mesh(new THREE.BoxGeometry(0.42, R.h - 0.6, 0.14), pilMat);
+      shaft.position.set(0, (R.h - 0.6) / 2 + 0.3, 0.07);
+      g.add(shaft);
+      for (let i = -1; i <= 1; i++) {
+        const flute = mesh(new THREE.BoxGeometry(0.05, R.h - 1.0, 0.03), M.darkBrass(), false);
+        flute.position.set(i * 0.12, (R.h - 0.6) / 2 + 0.3, 0.15);
+        g.add(flute);
+      }
+      const base = mesh(new THREE.BoxGeometry(0.54, 0.3, 0.22), M.darkBrass(), false);
+      base.position.set(0, 0.15, 0.1);
+      g.add(base);
+      const cap = mesh(new THREE.BoxGeometry(0.6, 0.26, 0.26), M.brass(), false);
+      cap.position.set(0, R.h - 0.43, 0.12);
+      g.add(cap);
+      g.position.set(x, 0, z);
+      g.rotation.y = yaw;
+      root.add(g);
+    };
+    for (let x = R.x0 + 1.6; x <= R.x1 - 1.6; x += 3.2) { pilaster(x, R.z0, 0); pilaster(x, R.z1, Math.PI); }
+    for (let z = R.z0 + 1.6; z <= R.z1 - 1.6; z += 3.2) { pilaster(R.x0, z, Math.PI / 2); pilaster(R.x1, z, -Math.PI / 2); }
+    // Chandeliers (not in the Hall of Shadows: one lamp, long shadows).
+    if (R.theme !== 'shadows' && R.h >= 3.8) {
+      const count = D > 13 ? 2 : 1;
+      for (let i = 0; i < count; i++) {
+        const z = count === 1 ? cz : cz + (i ? 1 : -1) * D / 4;
+        const ch = new THREE.Group();
+        const chain = mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.0, 6), M.darkBrass(), false);
+        chain.position.y = 0.5;
+        ch.add(chain);
+        for (const [rr, yy, n] of [[0.55, 0, 10], [0.32, 0.22, 6]] as [number, number, number][]) {
+          const ring = mesh(new THREE.TorusGeometry(rr, 0.025, 8, 36), M.brass(), false);
+          ring.rotation.x = Math.PI / 2;
+          ring.position.y = yy;
+          ch.add(ring);
+          for (let k = 0; k < n; k++) {
+            const a = (k / n) * Math.PI * 2;
+            const candle = mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.1, 6), mat('candle', () => new THREE.MeshStandardMaterial({ color: '#f4ead2', emissive: '#ffcf7a', emissiveIntensity: 0.6 })), false);
+            candle.position.set(Math.cos(a) * rr, yy + 0.07, Math.sin(a) * rr);
+            ch.add(candle);
+            const fl = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowSprite('#ffc46a'), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+            fl.scale.setScalar(0.16);
+            fl.position.set(Math.cos(a) * rr, yy + 0.15, Math.sin(a) * rr);
+            ch.add(fl);
+          }
+        }
+        const drop = mesh(new THREE.SphereGeometry(0.09, 12, 8), mat('crystal', () => new THREE.MeshStandardMaterial({ color: '#dff4ff', roughness: 0.02, metalness: 0.1, transparent: true, opacity: 0.8 })), false);
+        drop.position.y = -0.18;
+        ch.add(drop);
+        const light = new THREE.PointLight('#ffc27a', 7, 11, 1.4);
+        light.position.y = 0.05;
+        ch.add(light);
+        ch.position.set(cx, R.h - 1.25, z);
+        root.add(ch);
       }
     }
     // Guard door frame.
@@ -572,9 +647,17 @@ export function buildLevel(level: Level): LevelView {
     root.add(m);
   }
 
-  // Targets.
+  // Targets, each under its own warm spotlight so it reads as the focal point.
   const targets = new Map<string, TargetVisual>();
-  for (const t of level.targets) targets.set(t.id, buildTarget(t, level, root));
+  for (const t of level.targets) {
+    targets.set(t.id, buildTarget(t, level, root));
+    const fwd = new THREE.Vector3(Math.sin(t.yaw), 0, Math.cos(t.yaw));
+    const sp = new THREE.SpotLight('#ffd9a0', 22, 12, 0.55, 0.7, 1.3);
+    const c = new THREE.Vector3(...t.zone.c);
+    sp.position.copy(c).addScaledVector(fwd, 2.2).setY(Math.min(R.h - 0.3, c.y + 4.2));
+    sp.target.position.copy(c);
+    root.add(sp, sp.target);
+  }
 
   // Hide spots.
   const hides: THREE.Group[] = [];
@@ -644,8 +727,8 @@ export function buildLevel(level: Level): LevelView {
   const sc = sun.shadow.camera as THREE.OrthographicCamera;
   sc.left = -span * 0.75; sc.right = span * 0.75; sc.top = span * 0.75; sc.bottom = -span * 0.75;
   sc.near = 0.5; sc.far = span * 3;
-  sun.shadow.bias = -0.0004;
-  sun.shadow.normalBias = 0.02;
+  sun.shadow.bias = -0.0008;
+  sun.shadow.normalBias = 0.05;
   root.add(sun, sun.target);
   if (shadowHall && level.sun) {
     // The single low lamp the shadows come from (a brass searchlight high on the far wall).
@@ -672,9 +755,10 @@ export function buildLevel(level: Level): LevelView {
   if (!roof && R.theme !== 'shadows') {
     const lampPos: V3[] = [[R.x0 + 0.5, 2.4, cz - D / 4], [R.x1 - 0.5, 2.4, cz + D / 4], [cx, R.h - 0.6, R.z0 + 1]];
     for (const p of lampPos) {
-      const l = new THREE.PointLight('#ffa64a', 5, 8, 1.6);
+      // Sconces glow; only the first one is a real light (keeps the light count phone-friendly).
+      const l = new THREE.PointLight('#ffa64a', lamps.length === 0 ? 5 : 0, 8, 1.6);
       l.position.set(p[0], p[1], p[2]);
-      root.add(l);
+      if (lamps.length === 0) root.add(l);
       lamps.push(l);
       const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowSprite('#ffb35a'), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
       glow.scale.setScalar(0.6);
@@ -695,16 +779,14 @@ export function buildLevel(level: Level): LevelView {
 
   const guard = new Character('guard', 1.75);
   guard.root.visible = false;
-  // Flashlight: a visible cone showing where the guard looks (matches the sim's vision cone).
+  // Flashlight: a floor decal showing exactly where the guard can see (matches the sim's cone).
   const coneLen = 5.5, coneHalf = (45 * Math.PI) / 180;
-  const coneGeo = new THREE.ConeGeometry(Math.tan(coneHalf) * coneLen, coneLen, 32, 1, true);
-  coneGeo.translate(0, -coneLen / 2, 0);
-  coneGeo.rotateX(-Math.PI / 2);
-  const cone = new THREE.Mesh(coneGeo, new THREE.MeshBasicMaterial({ color: '#fff2b0', transparent: true, opacity: 0.09, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
-  cone.position.set(0, 1.1, 0);
-  cone.rotation.x = 0.12;
-  cone.name = 'flashlight';
-  guard.root.add(cone);
+  const fanGeo = new THREE.CircleGeometry(coneLen, 40, -Math.PI / 2 - coneHalf, 2 * coneHalf);
+  fanGeo.rotateX(-Math.PI / 2);
+  const fan = new THREE.Mesh(fanGeo, new THREE.MeshBasicMaterial({ map: glowSprite('#fff2b0'), color: '#fff6c8', transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending, depthWrite: false }));
+  fan.position.y = 0.03;
+  fan.name = 'flashlight';
+  guard.root.add(fan);
   const torch = new THREE.SpotLight('#fff0c0', 18, coneLen + 1, coneHalf, 0.5, 1.2);
   torch.position.set(0.3, 1.1, 0.2);
   torch.target.position.set(0, 0, coneLen);
@@ -714,10 +796,25 @@ export function buildLevel(level: Level): LevelView {
   raccoon.root.visible = false;
   root.add(raccoon.root);
 
+  // Dust motes drifting through the light.
+  const dn = 420;
+  const dpos = new Float32Array(dn * 3);
+  const rr = (n: number) => { const x = Math.sin(n * 12.9898 + level.id * 78.233) * 43758.5453; return x - Math.floor(x); };
+  for (let i = 0; i < dn; i++) {
+    dpos[i * 3] = R.x0 + rr(i) * W;
+    dpos[i * 3 + 1] = 0.2 + rr(i + 1000) * Math.min(R.h, 8);
+    dpos[i * 3 + 2] = R.z0 + rr(i + 2000) * D;
+  }
+  const dgeo = new THREE.BufferGeometry();
+  dgeo.setAttribute('position', new THREE.BufferAttribute(dpos, 3));
+  const dust = new THREE.Points(dgeo, new THREE.PointsMaterial({ map: glowSprite('#ffffff'), color: roof ? '#ffe2c0' : '#cfdcff', size: 0.035, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
+  dust.frustumCulled = false;
+  root.add(dust);
+
   const ventFans: THREE.Object3D[] = [];
   root.traverse((o) => { if (o.userData.fan) ventFans.push(o); });
 
-  return { root, exhibitMeshes, targets, exit, exitLight, hides, alarmLights, lamps, sun, hemi, lasers, moonbeams, guard, raccoon, pedestals, placards, ventFans, sky };
+  return { root, exhibitMeshes, targets, exit, exitLight, hides, alarmLights, lamps, sun, hemi, lasers, moonbeams, guard, raccoon, pedestals, placards, ventFans, dust, sky };
 }
 
 export function themeFog(level: Level): THREE.Color {
@@ -727,8 +824,20 @@ export function themeFog(level: Level): THREE.Color {
 function buildProp(p: Prop, level: Level, lasers: THREE.Object3D[], moonbeams: THREE.Object3D[]): THREE.Object3D {
   switch (p.kind) {
     case 'solid': {
-      const m = { marble: M.marble(), stone: M.stone(), wood: M.wood(), brass: M.brass(), velvet: M.velvet(), steel: M.steel(), dark: M.dark() }[p.mat];
+      let m = { marble: M.marble(), stone: M.stone(), wood: M.wood(), brass: M.brass(), velvet: M.velvet(), steel: M.steel(), dark: M.dark() }[p.mat];
       const g = new THREE.Group();
+      const sw = p.max[0] - p.min[0], sh = p.max[1] - p.min[1], sd = p.max[2] - p.min[2];
+      const big = (p.mat === 'marble' || p.mat === 'stone') && sh > 1.2 && Math.max(sw, sd) > 2.5;
+      if (big) {
+        // Cut-stone faces with a brass cap instead of a blank slab.
+        const t = stoneBlockTexture(p.mat === 'stone' ? '#7d7872' : '#9d968a').clone();
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.repeat.set(Math.max(sw, sd) / 3, sh / 1.6);
+        t.needsUpdate = true;
+        m = new THREE.MeshStandardMaterial({ map: t, roughness: 0.75 });
+        g.add(boxAt([p.min[0] - 0.02, p.max[1] - 0.12, p.min[2] - 0.02], [p.max[0] + 0.02, p.max[1], p.max[2] + 0.02], M.darkBrass()));
+        g.add(boxAt([p.min[0] - 0.03, 0, p.min[2] - 0.03], [p.max[0] + 0.03, 0.18, p.max[2] + 0.03], M.dark()));
+      }
       g.add(boxAt(p.min, p.max, m));
       if (p.walkable && p.max[1] > 1) {
         // Balustrade along the open edge facing the room centre.

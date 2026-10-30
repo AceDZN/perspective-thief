@@ -8,6 +8,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { LEVELS, WORLDS, levelById, type Level } from './levels.ts';
 import { EYE, NO_INPUT, Sim, type GameEvent, type Input } from './sim.ts';
@@ -117,6 +118,28 @@ composer.addPass(outline);
 const bloom = new UnrealBloomPass(new THREE.Vector2(512, 512), 0.32, 0.4, 0.9);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
+// Final look: cinematic grade (cool shadows, warm highlights), soft vignette, fine film grain.
+const grade = new ShaderPass({
+  uniforms: { tDiffuse: { value: null }, time: { value: 0 }, vignette: { value: 0.32 }, grain: { value: 0.035 }, warmth: { value: 1 } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: `
+    uniform sampler2D tDiffuse; uniform float time; uniform float vignette; uniform float grain; uniform float warmth;
+    varying vec2 vUv;
+    float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+    void main(){
+      vec4 c = texture2D(tDiffuse, vUv);
+      float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+      vec3 shadowTint = vec3(0.92, 0.97, 1.08);
+      vec3 highTint = mix(vec3(1.0), vec3(1.06, 1.0, 0.9), warmth);
+      c.rgb *= mix(shadowTint, highTint, smoothstep(0.15, 0.85, l));
+      c.rgb = mix(vec3(l), c.rgb, 1.08);
+      vec2 d = vUv - 0.5;
+      c.rgb *= 1.0 - vignette * smoothstep(0.25, 0.85, dot(d, d) * 2.2);
+      c.rgb += (hash(vUv * 937.0 + time) - 0.5) * grain;
+      gl_FragColor = c;
+    }`,
+});
+composer.addPass(grade);
 
 function resize(): void {
   const w = Math.max(1, app.clientWidth), h = Math.max(1, app.clientHeight);
@@ -186,13 +209,58 @@ scene.add(aimLine);
 
 function buildViewModel(): void {
   viewModel.clear();
-  // Tripo "gloved hand holding a brass lens" (glass faces +z in the file, so turn it around).
-  lensModel = modelInstance('lensHand', 0.16);
-  const inner = new THREE.Group();
-  inner.add(lensModel);
-  lensModel.position.y -= 0.1;
-  inner.rotation.y = Math.PI;
-  viewModel.add(inner);
+  // The antique brass lens (Tripo) held from below in a black leather glove (procedural).
+  lensModel = modelInstance('lens', 0.075);
+  const lens = new THREE.Group();
+  lens.add(lensModel);
+  // In the file the barrel runs along +x with the glass at +x: point the glass forward (−z).
+  lensModel.rotation.y = Math.PI / 2;
+  lensModel.position.y = -0.0375;
+  lens.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (m.isMesh && m.material) {
+      const mm = (m.material as THREE.MeshStandardMaterial).clone();
+      mm.color?.multiplyScalar(0.82);
+      mm.metalness = Math.max(mm.metalness ?? 0, 0.75);
+      mm.roughness = Math.min(mm.roughness ?? 0.5, 0.35);
+      m.material = mm;
+    }
+  });
+  viewModel.add(lens);
+  const glass = new THREE.Mesh(new THREE.CircleGeometry(0.03, 28), new THREE.MeshBasicMaterial({ color: '#7cc8ff', transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }));
+  glass.position.set(0, 0, -0.072);
+  glass.userData.lensGlass = true;
+  viewModel.add(glass);
+  const glove = new THREE.MeshStandardMaterial({ color: '#1a1a1f', roughness: 0.62, metalness: 0.05 });
+  const hand = new THREE.Group();
+  const palm = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.03, 0.09), glove);
+  palm.position.set(0.005, -0.05, 0.01);
+  palm.rotation.z = 0.15;
+  hand.add(palm);
+  // Four fingers curling up around the left side of the barrel, thumb over the right.
+  for (let i = 0; i < 4; i++) {
+    const f = new THREE.Mesh(new THREE.CapsuleGeometry(0.0105, 0.045, 4, 8), glove);
+    f.position.set(-0.035, -0.02 + i * 0.0, -0.025 + i * 0.022);
+    f.rotation.set(0, 0, -0.5);
+    hand.add(f);
+    const tip = new THREE.Mesh(new THREE.CapsuleGeometry(0.0095, 0.025, 4, 8), glove);
+    tip.position.set(-0.042, 0.018, -0.025 + i * 0.022);
+    tip.rotation.set(0, 0, 0.6);
+    hand.add(tip);
+  }
+  const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.012, 0.05, 4, 8), glove);
+  thumb.position.set(0.04, -0.005, 0.0);
+  thumb.rotation.set(0.3, 0, 0.5);
+  hand.add(thumb);
+  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.05, 0.13, 14), glove);
+  cuff.position.set(0.02, -0.075, 0.1);
+  cuff.rotation.x = 1.25;
+  hand.add(cuff);
+  const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.062, 0.2, 14), new THREE.MeshStandardMaterial({ color: '#23242c', roughness: 0.9 }));
+  sleeve.position.set(0.03, -0.12, 0.24);
+  sleeve.rotation.x = 1.25;
+  hand.add(sleeve);
+  viewModel.add(hand);
 }
 
 function makeSparkles(): THREE.Points {
@@ -816,6 +884,17 @@ function syncView(dt: number, realtime: boolean): void {
   if (level.targets.some((t) => t.socket === 'window' && sim!.solved.has(t.id))) for (const mb of view.moonbeams) mb.visible = false;
   // Lasers flicker.
   for (const lz of view.lasers) lz.traverse((o) => { const mm = o as THREE.Mesh; if (mm.isMesh && mm.material === (mm.material as THREE.MeshBasicMaterial) && (mm.material as THREE.MeshBasicMaterial).blending === THREE.AdditiveBlending) (mm.material as THREE.MeshBasicMaterial).opacity = 0.75 + Math.sin(sim!.time * 30) * 0.15; });
+  // Dust drifts slowly upward and wraps around.
+  if (!reduced) {
+    const dp = view.dust.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const top = Math.min(level.room.h, 8);
+    for (let i = 0; i < dp.count; i++) {
+      let y = dp.getY(i) + dt * (0.04 + (i % 7) * 0.008);
+      if (y > top) y = 0.2;
+      dp.setXYZ(i, dp.getX(i) + Math.sin(sim.time * 0.3 + i) * dt * 0.05, y, dp.getZ(i) + Math.cos(sim.time * 0.25 + i * 1.3) * dt * 0.05);
+    }
+    dp.needsUpdate = true;
+  }
   for (const f of view.ventFans) f.rotation.z += dt * (phase === 'consequence' && consequenceFx === 'blownAway' ? 30 : 6);
 
   // Exit portal.
@@ -897,7 +976,7 @@ function syncView(dt: number, realtime: boolean): void {
     aimDot.scale.setScalar(0.12 + Math.min(0.4, camera.position.distanceTo(aimDot.position) * 0.025));
   }
   if (aimLine.visible) {
-    const tip = new THREE.Vector3(0.2, -0.17, -0.45).applyQuaternion(camera.quaternion).add(camera.position);
+    const tip = new THREE.Vector3(0.15, -0.13, -0.38).applyQuaternion(camera.quaternion).add(camera.position);
     const pos = aimLineGeo.getAttribute('position') as THREE.BufferAttribute;
     pos.setXYZ(0, tip.x, tip.y, tip.z);
     pos.setXYZ(1, a.point[0], a.point[1] + 0.02, a.point[2]);
@@ -908,10 +987,10 @@ function syncView(dt: number, realtime: boolean): void {
   viewModel.visible = phase !== 'hidden' && phase !== 'caught';
   const bob = reduced ? 0 : Math.sin(viewBob * Math.PI) * 0.008;
   const portrait = camera.aspect < 1;
-  const vmLocal = portrait ? new THREE.Vector3(0.14, -0.3 + bob, -0.5) : new THREE.Vector3(0.23, -0.23 + bob, -0.42);
+  const vmLocal = portrait ? new THREE.Vector3(0.11, -0.2 + bob, -0.36) : new THREE.Vector3(0.19, -0.16 + bob, -0.3);
   viewModel.scale.setScalar(portrait ? 0.7 : 1);
   viewModel.position.copy(vmLocal.applyQuaternion(camera.quaternion).add(camera.position));
-  tmpQ.setFromEuler(new THREE.Euler(0.12, -0.22, 0.05));
+  tmpQ.setFromEuler(new THREE.Euler(0.1, -0.12, 0.04));
   viewModel.quaternion.copy(camera.quaternion).multiply(tmpQ);
 
   updateBursts(dt);
@@ -1083,6 +1162,8 @@ function frame(now: number): void {
     menu.update(dt, selected, reduced);
     positionMenuDom();
   }
+  grade.uniforms.time.value = (now % 10000) / 1000;
+  grade.uniforms.grain.value = reduced ? 0 : 0.035;
   composer.render(dt);
   requestAnimationFrame(frame);
 }
