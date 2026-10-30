@@ -100,3 +100,31 @@ It freezes whenever you stop, and its vision is only checked while you move. I s
 ## What automation cannot tell you
 
 This was a scripted robot playing through real input and reading screenshots. **It cannot measure fun, frustration, or whether a 13-year-old learns similarity from this.** It can't say whether the slapstick is funny, whether a kid notices the plates, or whether the bypasses above are actually found and used by real players rather than merely possible. That needs a few real grade-8 players, watched without help, with a before/after item on k vs k².
+
+## Lead's response — what was changed after this playtest (2026-10-31)
+
+Re-verified afterwards: `npm test` 59/59; all 18 levels played start to finish again through keyboard events in headless Chromium (`npm run capture` scenarios `solveAll` + `finale`, 3★ each); new captures in `docs/captures/`.
+
+| Finding | Status |
+|---|---|
+| **B1** fail card gives the answer | **Fixed.** The card is progressive per target: 1st miss shows only the ratio you used and "closer/farther"; 2nd adds which kind of ratio (lengths / area k² / volume k³); only the 3rd shows the needed k and the root. A second failed drop now costs a second star (two misses → 1★). Tests: `explain is progressive…`, `starsFor`. |
+| **B2** "always 3× d₁" wins L1, 9, 11, 12, 15, 16 | **Not changed.** Those k values are the handoff's authored numbers (k = 3 in each). Mitigations: it never wins a multi-target level or the finale, and the replay rooms vary k (1.5, 2.5, 3, 4, 5, never 2). Recorded as a known limit. |
+| **B3** floor preview + k = 1 transfer | **Fixed.** A drop anywhere other than a target now flies the exhibit back to its pedestal at its starting size ("העדשה עובדת רק על מטרה"). No floor fine-tuning, no re-grab chains. Test: `a drop anywhere but a target…`. |
+| **B4** caught is faster than hiding, same stars | **Fixed.** Getting caught costs an extra star; the hide wait is shorter (search 2.8 s, then the guard leaves); the hide chip is now a non-clickable arrow that points at the nearest sarcophagus. |
+| **B5** finale guard easy to ignore | **Partly.** His flashlight cone is now checked even while you stand still (he still only *moves* while you move); the cone is drawn so you can read it. Walking behind him is still allowed; that is the stealth. |
+| Bug 1 mobile map cropped | **Fixed.** The map camera fits the whole museum to any aspect; smaller logo on narrow screens (`docs/captures/00-menu-mobile.jpg`). |
+| Bug 2 touch climb button | **Fixed.** Shown when a climbable ledge is in front of you (`Sim.climbable()`). |
+| Bug 3 hide chip does nothing | **Fixed** (it's an arrow indicator now, not a button). |
+| Bug 4 map toast leaks into the level | **Fixed** (toast cleared on level start). |
+| Bug 5 map stays on the finished level | **Fixed** (selection moves to the next level on a win). |
+| Bug 6 no visible roof crash | **Fixed.** Rooms no longer have a bright skylight strip; a roof crash punches a jagged moonlit hole with a light shaft and debris, and the camera tilts up to it (`03-failure-crash.jpg`). |
+| "השתמשת" singular, "מרחוק", tutorial arrows, k² wrap | **Fixed** ("השתמשתם", "ממרחק", tutorial without arrows, math spans don't wrap). |
+| L12 "צוהר" vs real skylights | **Fixed** (renamed "חלון הירח" everywhere; skylight strips removed). |
+| L3 card shows one exact k for a range | **Fixed** (states the window "בין 2.5 ל־2.75"). |
+| L8 side labels unreadable | **Improved** (labels ~2× larger on the sign and the frame). |
+| L15 frame tiny, plate bigger than frame | **Improved** (smaller plate); the frame stays 24 cm as the handoff's cm² numbers require. |
+| L6 lamp glare on the mannequin ruler | **Fixed** (no wall sconces in the Hall of Shadows; the single lamp is the light source). |
+| L1 plate unreadable from spawn | **Improved** (bigger niche plate). |
+| Mobile act button overlaps the bezel | **Fixed** (smaller, moved up on narrow screens). |
+| Guard close-up dark / clips through pedestals | **Not changed** (no path-finding around props). |
+| Lens view model reads as a camera | **Not changed** (Tripo output; budget spent). |

@@ -96,3 +96,26 @@ test('the guard chase ends by hiding in the sarcophagus', () => {
   assert.equal(sim2.stats.alarms, 1);
   void sim;
 });
+
+test('a drop anywhere but a target sends the exhibit back to its pedestal at its starting size', () => {
+  const lvl = LEVELS[0];
+  const sim = new Sim(lvl);
+  const s = plan(lvl)[0];
+  sim.player.x = s.pad[0];
+  sim.player.z = s.pad[1];
+  const ex = sim.ex('cube')!;
+  const b = sim.exBox(ex);
+  aimAt(sim, [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2]);
+  assert.ok(sim.grab());
+  // Aim at open floor 3 m ahead (k = 1.5 on the floor would be a free size preview).
+  sim.player.x = 2;
+  sim.player.z = 4;
+  aimAt(sim, [2, 0, 1]);
+  assert.equal(sim.aim.kind, 'floor');
+  sim.drop();
+  settle(sim);
+  assert.equal(ex.state, 'pedestal');
+  assert.equal(ex.scale, 1);
+  assert.deepEqual(ex.pos, [lvl.exhibits[0].pos[0], lvl.exhibits[0].pedestal, lvl.exhibits[0].pos[1]]);
+  assert.equal(sim.stats.failures, 0);
+});
