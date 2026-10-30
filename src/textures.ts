@@ -166,6 +166,24 @@ export function panelTexture(): THREE.CanvasTexture {
   });
 }
 
+/** City facade at dawn: dark stone with a few warm lit windows (emissive map uses the same canvas). */
+export function facadeTexture(seed: number): THREE.CanvasTexture {
+  return cached('facade-' + (seed % 4), () => {
+    const [c, g] = canvas(256, 512);
+    const r = rng(seed + 3);
+    g.fillStyle = ['#4a3a52', '#5a4058', '#3e3a50', '#52404a'][seed % 4];
+    g.fillRect(0, 0, 256, 512);
+    for (let y = 16; y < 512; y += 32) {
+      for (let x = 12; x < 256; x += 30) {
+        const lit = r() < 0.22;
+        g.fillStyle = lit ? `rgba(255,${190 + Math.floor(r() * 50)},${110 + Math.floor(r() * 60)},0.95)` : 'rgba(20,16,30,0.85)';
+        g.fillRect(x, y, 16, 20);
+      }
+    }
+    return tex(c, [1, 1]);
+  });
+}
+
 /** Cut-stone blocks for big plain faces (mezzanines, balconies, tower). */
 export function stoneBlockTexture(tint = '#b9b4aa'): THREE.CanvasTexture {
   return cached('stoneblock-' + tint, () => {

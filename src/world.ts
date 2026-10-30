@@ -21,6 +21,7 @@ import {
   skyTexture,
   stoneBlockTexture,
   panelTexture,
+  facadeTexture,
   velvetTexture,
   wallTexture,
   woodTexture,
@@ -525,11 +526,35 @@ export function buildLevel(level: Level): LevelView {
       const a = (i / 70) * Math.PI * 2;
       const dist = 34 + Math.abs(r(i)) * 20;
       const h = 6 + Math.abs(r(i + 7)) * 26;
-      const b = mesh(new THREE.BoxGeometry(4 + Math.abs(r(i + 3)) * 6, h, 4 + Math.abs(r(i + 5)) * 6), mat('city', () => new THREE.MeshStandardMaterial({ color: '#6a4b6a', roughness: 0.9 })), false);
+      const ft = facadeTexture(i);
+      const b = mesh(new THREE.BoxGeometry(4 + Math.abs(r(i + 3)) * 6, h, 4 + Math.abs(r(i + 5)) * 6), mat('city' + (i % 4), () => new THREE.MeshStandardMaterial({ map: ft, emissive: '#ffffff', emissiveMap: ft, emissiveIntensity: 0.35, roughness: 0.9 })), false);
       b.position.set(Math.sin(a) * dist, h / 2 - 8, Math.cos(a) * dist);
       city.add(b);
     }
     root.add(city);
+    // Lamp posts on the parapet with string lights between them.
+    const posts: V3[] = [];
+    for (const [x0, z0, x1, z1] of [[R.x0, R.z0, R.x1, R.z0], [R.x1, R.z0, R.x1, R.z1], [R.x1, R.z1, R.x0, R.z1], [R.x0, R.z1, R.x0, R.z0]] as [number, number, number, number][]) {
+      for (let t = 0; t < 1; t += 0.25) posts.push([x0 + (x1 - x0) * t, 1.0, z0 + (z1 - z0) * t]);
+    }
+    const bulbM = new THREE.SpriteMaterial({ map: glowSprite('#ffd890'), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+    posts.forEach((pp, i) => {
+      const post = mesh(new THREE.CylinderGeometry(0.05, 0.07, 2.4, 8), M.darkBrass(), false);
+      post.position.set(pp[0], pp[1] + 1.2, pp[2]);
+      root.add(post);
+      const lampHead = new THREE.Sprite(bulbM);
+      lampHead.scale.setScalar(0.7);
+      lampHead.position.set(pp[0], pp[1] + 2.45, pp[2]);
+      root.add(lampHead);
+      const nx = posts[(i + 1) % posts.length];
+      for (let k = 1; k < 10; k++) {
+        const t = k / 10;
+        const bulb = new THREE.Sprite(bulbM);
+        bulb.scale.setScalar(0.22);
+        bulb.position.set(pp[0] + (nx[0] - pp[0]) * t, pp[1] + 2.3 - Math.sin(t * Math.PI) * 0.6, pp[2] + (nx[2] - pp[2]) * t);
+        root.add(bulb);
+      }
+    });
     // Planters and lamps for the sculpture garden.
     for (const [x, z] of [[-10, -2], [10, 4], [-4, 10], [4, -11], [11, 11]] as V2[]) {
       const pl = buildExhibitMesh({ shape: { type: 'box', w: 1.2, h: 0.6, d: 1.2, look: 'planter' } });
@@ -731,6 +756,12 @@ export function buildLevel(level: Level): LevelView {
   sun.shadow.bias = -0.0008;
   sun.shadow.normalBias = 0.05;
   root.add(sun, sun.target);
+  if (roof) {
+    const sunDisc = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowSprite('#fff0c0'), color: '#ffe2a8', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+    sunDisc.scale.setScalar(26);
+    sunDisc.position.copy(sun.position).sub(tgt).normalize().multiplyScalar(90).add(tgt);
+    root.add(sunDisc);
+  }
   if (shadowHall && level.sun) {
     // The single low lamp the shadows come from (a brass searchlight high on the far wall).
     const lampG = new THREE.Group();
