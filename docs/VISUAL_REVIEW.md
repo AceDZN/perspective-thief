@@ -25,9 +25,9 @@ Actual: `docs/captures/*.jpg`, captured 2026-10-31 by `tests/browser-capture.mjs
 ## 03 · Failure → `03-failure-crash.jpg`, `03b-guard-chase.jpg`, `03c-hidden.jpg`, `03d-worked-ratio.jpg`
 
 Real sequence on level 12: grab the painting at d₁ = 1.20 m, drop at d = 10.80 m (k = 9, the area ratio taken as k).
-- **Match:** the painting grows ×9 and rises through the ceiling (roof crash) with glass/plaster particles and falling debris, screen-edge red vignette, red pulsing alarm lights, the lens bezel turns red, a star is lost, toast "דרך הגג! ענק מדי".
+- **Match:** the painting grows ×9 and bursts through the ceiling (roof crash): a jagged moonlit hole and light shaft open in the ceiling, the camera tilts up to it, glass/plaster particles and debris fall, screen-edge red vignette, red pulsing alarm lights, the lens bezel turns red, a star is lost, toast "דרך הגג! ענק מדי".
 - **Match:** the rigged Tripo guard (round, mustache, peaked cap) runs in from his door (`run` clip) with a flashlight cone; a round gold "מחבוא" chip appears on the right; hiding in the upright Tripo sarcophagus switches to a peek view while the guard searches with `look_around`/`scratch_head` and then leaves.
-- **Match:** the worked-ratio card: big red "אופס!", the used ratio `k = 10.8 ÷ 1.2 = 9`, the needed `k = 3 · יחס שטחים = k²`, the root line `k = √9 = 3`, which way to move, and a round retry button. The mockup's RTL bug (k² on the wrong side) is fixed: math sits in LTR isolates.
+- **Match:** the worked-ratio card: big red "אופס!", the headline of what happened, the ratio used `k = 10.8 ÷ 1.2 = 9` and which way to move, and a round retry button. It is progressive (playtest fix): the 2nd miss on a target adds the ratio kind (`יחס שטחים — k²`), only the 3rd shows the needed `k = 3` and `k = √9 = 3`. The mockup's RTL bug (k² on the wrong side) is fixed: math sits in LTR isolates.
 - **Deviation:** the mockup shows everything in one frame (crash + guard + card). The game sequences them: crash (1.6 s) → chase → hide → card, so the card never covers the chase.
 - **Deviation:** our painting is a procedural gold frame with a drawn cat; the mockup's is a lavish oil painting.
 
