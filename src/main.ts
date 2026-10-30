@@ -91,11 +91,11 @@ const overlayScene = new THREE.Scene();
 const pmrem = new THREE.PMREMGenerator(renderer);
 const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 scene.environment = envTex;
-scene.environmentIntensity = 0.35;
+scene.environmentIntensity = 0.5;
 overlayScene.environment = envTex;
-overlayScene.environmentIntensity = 0.6;
-overlayScene.add(new THREE.HemisphereLight('#bcd0ff', '#2a1a10', 1.4));
-const ovKey = new THREE.DirectionalLight('#ffe2b0', 2.2);
+overlayScene.environmentIntensity = 0.3;
+overlayScene.add(new THREE.HemisphereLight('#9fb4e8', '#2a1a10', 0.9));
+const ovKey = new THREE.DirectionalLight('#ffe2b0', 1.1);
 ovKey.position.set(1, 2, 1);
 overlayScene.add(ovKey);
 
@@ -114,7 +114,7 @@ outline.edgeGlow = 0.8;
 outline.edgeThickness = 2;
 outline.pulsePeriod = 1.6;
 composer.addPass(outline);
-const bloom = new UnrealBloomPass(new THREE.Vector2(512, 512), 0.55, 0.5, 0.82);
+const bloom = new UnrealBloomPass(new THREE.Vector2(512, 512), 0.32, 0.4, 0.9);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
@@ -185,39 +185,17 @@ scene.add(aimLine);
 
 function buildViewModel(): void {
   viewModel.clear();
-  const hand = new THREE.Group();
-  const glove = new THREE.MeshStandardMaterial({ color: '#16161a', roughness: 0.75 });
-  const palm = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.05, 0.1), glove);
-  palm.position.set(0.0, -0.055, 0.03);
-  hand.add(palm);
-  for (let i = 0; i < 4; i++) {
-    const f = new THREE.Mesh(new THREE.CapsuleGeometry(0.012, 0.05, 4, 8), glove);
-    f.position.set(-0.035 + i * 0.023, -0.02, -0.02);
-    f.rotation.x = Math.PI / 2;
-    f.rotation.z = 0.2;
-    hand.add(f);
-  }
-  const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.014, 0.05, 4, 8), glove);
-  thumb.position.set(-0.06, -0.01, 0.02);
-  thumb.rotation.z = 1.1;
-  hand.add(thumb);
-  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.055, 0.12, 12), glove);
-  cuff.position.set(0.02, -0.09, 0.1);
-  cuff.rotation.x = 1.2;
-  hand.add(cuff);
-  lensModel = modelInstance('lens', 0.13);
-  // Tripo lens: point its long axis forward if it came out upright.
-  const box = new THREE.Box3().setFromObject(lensModel);
-  const sz = box.getSize(new THREE.Vector3());
-  const lensHolder = new THREE.Group();
-  if (sz.y > sz.z * 1.2) lensModel.rotation.x = -Math.PI / 2;
-  lensModel.position.y -= 0.06;
-  lensHolder.add(lensModel);
-  lensHolder.position.set(0, 0, -0.02);
-  viewModel.add(lensHolder, hand);
-  const lensGlow = new THREE.PointLight('#ffd08a', 0.6, 0.6);
-  lensGlow.position.set(0, 0.05, -0.1);
-  viewModel.add(lensGlow);
+  // Tripo "gloved hand holding a brass lens" (glass faces +z in the file, so turn it around).
+  lensModel = modelInstance('lensHand', 0.2);
+  const inner = new THREE.Group();
+  inner.add(lensModel);
+  lensModel.position.y -= 0.1;
+  inner.rotation.y = Math.PI;
+  viewModel.add(inner);
+  // Emissive glass disc so the lens glows a little.
+  const glass = new THREE.Mesh(new THREE.CircleGeometry(0.028, 24), new THREE.MeshBasicMaterial({ color: '#8fd0ff', transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }));
+  glass.position.set(0, 0.005, -0.1);
+  viewModel.add(glass);
 }
 
 function makeSparkles(): THREE.Points {

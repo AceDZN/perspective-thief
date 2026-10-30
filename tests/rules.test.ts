@@ -158,7 +158,7 @@ test('powerName and fmt', () => {
 
 const balanced = (s: string) => (s.match(/⟦/g) ?? []).length === (s.match(/⟧/g) ?? []).length;
 
-test('explain: the used ratio, the needed ratio, the root and the drop distance', () => {
+test('explain: the used ratio, the needed ratio, the root and which way to move', () => {
   // Area, the k = 9 skylight mistake.
   const m2 = area(0.24);
   const c2 = checkDrop({ measure: m2, need: need(2.16), currentScale: 1, d1: 1.5, d2: 13.5 });
@@ -169,14 +169,15 @@ test('explain: the used ratio, the needed ratio, the root and the drop distance'
   assert.match(l2[1], /יחס שטחים/);
   assert.match(l2[1], /k²/);
   assert.match(l2[2], /√9 = 3/);
-  assert.match(l2[3], /d₂ = 3 × 1\.5 = 4\.5/);
+  // The card says which way to move, not the exact d₂ (the retry still needs k · d₁).
+  assert.match(l2[3], /קרוב יותר/);
   // Weight: cube root.
   const m3 = weight(2);
   const c3 = checkDrop({ measure: m3, need: need(54), currentScale: 1, d1: 1.2, d2: 6 });
   const l3 = explain(c3, m3, 1.2, 6);
   assert.equal(l3.length, 4);
   assert.match(l3[2], /∛27 = 3/);
-  assert.match(l3[3], /d₂ = 3 × 1\.2 = 3\.6/);
+  assert.match(l3[3], /קרוב יותר/);
   // Length: no root line.
   const m1 = len(0.5);
   const c1 = checkDrop({ measure: m1, need: need(1.5), currentScale: 1, d1: 2, d2: 5 });
@@ -185,7 +186,7 @@ test('explain: the used ratio, the needed ratio, the root and the drop distance'
   assert.match(l1[0], /k = 5 ÷ 2 = 2\.5/);
   assert.match(l1[1], /יחס אורכים/);
   assert.ok(!l1.join(' ').includes('√'));
-  assert.match(l1[2], /d₂ = 3 × 2 = 6/);
+  assert.match(l1[2], /רחוק יותר/);
   for (const l of [...l1, ...l2, ...l3]) assert.ok(balanced(l), `unbalanced LTR markers: ${l}`);
 });
 

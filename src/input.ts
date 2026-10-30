@@ -105,7 +105,12 @@ export class Controls {
   read(): Input {
     const k = this.keys;
     let fwd = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0);
-    let strafe = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0);
+    let strafe = (k.has('KeyD') ? 1 : 0) - (k.has('KeyA') ? 1 : 0);
+    // Keyboard turning (arrows) and looking up/down (PageUp/PageDown or Q/Z) — playable without a mouse.
+    const turn = (k.has('ArrowLeft') ? 1 : 0) - (k.has('ArrowRight') ? 1 : 0);
+    const tilt = (k.has('PageUp') || k.has('KeyQ') ? 1 : 0) - (k.has('PageDown') || k.has('KeyZ') ? 1 : 0);
+    this.lookDX -= turn * 7 * (k.has('ShiftLeft') || k.has('ShiftRight') ? 0.35 : 1);
+    this.lookDY -= tilt * 5;
     if (this.stick.id >= 0) {
       fwd = -this.stick.y;
       strafe = this.stick.x;

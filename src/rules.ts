@@ -148,7 +148,7 @@ export function explain(check: DropCheck, m: Measure, d1: number, d2: number): s
   lines.push(`היה צריך ⟦k = ${fmt(check.kNeeded)}⟧ · ${powerName(m.power)}${m.power === 1 ? '' : ` = ⟦k${m.power === 2 ? '²' : '³'}⟧`}`);
   if (m.power === 2) lines.push(`השטח גדל פי ⟦k² = ${fmt(check.kNeeded ** 2)}⟧, לכן ⟦k = √${fmt(check.kNeeded ** 2)} = ${fmt(check.kNeeded)}⟧`);
   if (m.power === 3) lines.push(`המשקל גדל פי ⟦k³ = ${fmt(check.kNeeded ** 3)}⟧, לכן ⟦k = ∛${fmt(check.kNeeded ** 3)} = ${fmt(check.kNeeded)}⟧`);
-  lines.push(`נקודת הנחה: ⟦d₂ = ${fmt(check.kNeeded)} × ${fmt(d1)} = ${fmt(check.kNeeded * d1)} מ'⟧`);
+  lines.push(check.k > check.kNeeded ? 'הניחו קרוב יותר.' : 'הניחו רחוק יותר.');
   return lines;
 }
 
