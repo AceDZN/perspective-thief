@@ -9,7 +9,7 @@ Hebrew RTL UI, Three.js, 18 authored levels in 5 halls, plus generated "surprise
 ```bash
 npm install
 npm run dev        # http://localhost:5214  (strict port)
-npm test           # 57 unit tests: rules, all 18 levels solvable through the sim, misconception traps
+npm test           # 59 unit tests: rules, all 18 levels solvable through the sim, misconception traps
 npm run build      # static build in dist/ (relative base, works offline)
 npm run preview    # http://localhost:4214
 npm run capture    # needs the dev server: plays scenarios in headless Chromium, saves screenshots
@@ -34,7 +34,7 @@ The lens HUD shows the locked grab distance **d₁** and the live rangefinder di
 
 - **18 authored levels** (`src/levels.ts`): Gallery of Lengths (1–5), Hall of Shadows (6–10, real shadow-casting light, AA similar triangles), Canvas & Carpet (11–15, perimeter k vs area k²), The Vault (16–17, k³ extension and congruence k = 1), and the no-hints rooftop finale at dawn (18) with a patrolling guard who only moves while you move. Each world ends in a transfer level. See `LEVELS.md` for every level's numbers and solution, and `CURRICULUM.md` for the Workbook module links.
 - **Pure math** in `src/rules.ts` (ratio, k windows for powers 1/2/3, drop verdicts, worked explanations, stars) and a **headless sim** in `src/sim.ts` (movement, aiming, grab/drop, consequences, guard, stealth). The Three.js scene only renders the sim.
-- **Consequences:** crash and roof-crash (alarm, guard chase, hide in a sarcophagus or get caught), fall-through, blown away by the vent fan, pocketed by the guard, too short, gap left, jam (wrong corresponding sides), not similar. Every mistake is recoverable and is followed by a worked-ratio card.
+- **Consequences:** crash and roof-crash (alarm, guard chase, hide in a sarcophagus or get caught), fall-through, blown away by the vent fan, pocketed by the guard, too short, gap left, jam (wrong corresponding sides), not similar. Every mistake is recoverable and is followed by a worked-ratio card that reveals more on each repeated miss (ratio used → ratio kind → needed k). A drop anywhere but a target sends the exhibit back to its pedestal.
 - **Tripo 3D models** (`public/models/`, see `ASSETS.md`): rigged night guard (walk/run/look-around/scratch-head/fall), rigged raccoon accomplice (idle/greet/cheer), lens-in-glove view model, dinosaur crate, bust, statue, upright sarcophagus. Everything that carries a number is procedural and exact.
 - **3D level select** (a museum diorama on a planning table), stars and progress saved in `localStorage`, hints, pause, mute, reduced-motion, touch controls, Hebrew Rubik font bundled.
 - **Replay:** after a hall is cleared, "חדר חדש" builds a fresh room from that hall's templates with new numbers, verified by the solver (solvable, and the constant "drop at 2× grab" strategy fails).

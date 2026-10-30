@@ -11,11 +11,11 @@ Original prompt: build Perspective Thief (גנב הפרספקטיבה), a real-3
 5. **Math review** (level designer helper): fixed wording, terms (מקצוע, חיישן גובה…), missing numbers (L6 mannequin sign, L10 banner), L9 pad, L12 room length, L13 plate shape; added `tests/rules.test.ts`, `tests/traps.test.ts`, `CURRICULUM.md`, `LEVELS.md`. The lead then moved pads on L12/13/17/18 so "d₁ + k" or "d₁ − 2" can never land on the answer.
 6. **Scene/HUD/audio/menu** built to match the mockups; level 1 proven end to end with real keyboard input in the browser pane; then all 18 levels played start to finish by the keyboard autopilot in headless Chromium (17 via solver stands, the finale via a stealth route). 3 stars on each.
 7. **Visual review** against the mockups with real captures: `docs/VISUAL_REVIEW.md`, `docs/captures/`. Fixed: overexposure, ruler orientation, vent hidden behind the wainscot, exit arch over the vent, held object hiding the target (now held lower right), menu RTL order, mobile HUD overlap, pause on failed pointer lock, hide camera inside the sarcophagus, guard searching nose-to-nose, keyboard turn speed.
-8. **Independent playtest:** see `PLAYTEST.md`.
+8. **Independent playtest** (`PLAYTEST.md`): found 5 bypasses, 6 bugs, clarity items. Fixed: progressive worked-ratio card (no answer on the 1st miss), floor drops return to the pedestal, caught costs a star + hide arrow, guard sees while you stand still, touch climb button, visible roof hole + camera tilt, mobile map fit, toast leak, map selection after a win, Hebrew wording, L12 rename, L3 range wording, larger L8 labels. Not changed: ×3 constant wins 6 single-target levels (handoff's authored k values). Re-verified all 18 levels in the browser afterwards.
 
 ## State
 
-- `npm test`: 57/57 pass. `npm run build`: OK. Dev server: port 5214.
+- `npm test`: 59/59 pass. `npm run build`: OK. Dev server: port 5214.
 - Measured 60 fps (headless GPU, 720p/1080p). Bundle: JS 875 KB (234 KB gz), models 5.9 MB.
 
 ## TODO / ideas
