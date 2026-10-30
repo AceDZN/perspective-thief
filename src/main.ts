@@ -702,7 +702,8 @@ function syncView(dt: number, realtime: boolean): void {
     const lb = localBounds(ex.def.shape, 1, ex.orientation);
     const c = new THREE.Vector3((lb.min[0] + lb.max[0]) / 2, (lb.min[1] + lb.max[1]) / 2, (lb.min[2] + lb.max[2]) / 2);
     const holdDist = 1.55;
-    const forward = new THREE.Vector3(0, -0.08, -1).applyQuaternion(camera.quaternion).normalize();
+    // Held off-centre (lower right) so the aim point stays visible; same distance keeps the apparent size.
+    const forward = new THREE.Vector3(0.2, -0.13, -1).applyQuaternion(camera.quaternion).normalize();
     const holdPos = camera.position.clone().add(forward.multiplyScalar(holdDist));
     const carryScale = sim.carry && sim.carry.exId === ex.def.id ? (ex.scale * holdDist) / sim.carry.grab3d : 0;
     if (ex.state === 'carried') {
@@ -780,7 +781,8 @@ function syncView(dt: number, realtime: boolean): void {
   // Exit portal.
   const open = sim.allSolved();
   const portal = view.exit.userData.portal as THREE.Mesh;
-  (portal.material as THREE.MeshBasicMaterial).opacity = open ? 0.45 + Math.sin(sim.time * 3) * 0.12 : 0.04;
+  const near = Math.min(1, Math.max(0, (Math.hypot(P.x - level.exit.pos[0], P.z - level.exit.pos[2]) - 0.6) / 2.5));
+  (portal.material as THREE.MeshBasicMaterial).opacity = (open ? 0.45 + Math.sin(sim.time * 3) * 0.12 : 0.04) * near;
   view.exitLight.intensity = open ? 8 : 0;
   view.exit.visible = true;
 
@@ -833,7 +835,11 @@ function syncView(dt: number, realtime: boolean): void {
       rc.play(['idle', 'wave', 'breath']);
     }
   } else {
-    const home = new THREE.Vector3(level.exit.pos[0] + 0.6, level.exit.pos[1], level.exit.pos[2] + 0.4);
+    // The raccoon waits at the target it will take the loot from, then at the exit.
+    const waitAt = level.targets.find((t) => t.success === 'raccoon' && sim!.targetActive(t));
+    const home = waitAt
+      ? new THREE.Vector3(waitAt.anchor[0] + Math.sin(waitAt.yaw) * 0.9 + Math.cos(waitAt.yaw) * 1.1, 0, waitAt.anchor[2] + Math.cos(waitAt.yaw) * 0.9 - Math.sin(waitAt.yaw) * 1.1)
+      : new THREE.Vector3(level.exit.pos[0] + 0.6, level.exit.pos[1], level.exit.pos[2] + 0.4);
     rc.root.position.lerp(home, Math.min(1, dt * 2));
     rc.root.rotation.y = Math.atan2(P.x - rc.root.position.x, P.z - rc.root.position.z);
     if (phase === 'won') rc.play(['cheer', 'jump', 'dance']);

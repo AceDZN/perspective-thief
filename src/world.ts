@@ -940,12 +940,12 @@ function buildTarget(t: Target, level: Level, root: THREE.Group): TargetVisual {
     case 'vent': {
       const size = 0.8;
       const hole = new THREE.Mesh(new THREE.PlaneGeometry(size, size), M.void());
-      hole.position.set(0, size / 2, -0.43);
+      hole.position.set(0, size / 2, -0.385);
       g.add(hole);
-      frameBar(-size / 2, 0, size / 2, 0, -0.42);
-      frameBar(-size / 2, size, size / 2, size, -0.42);
-      frameBar(-size / 2, 0, -size / 2, size, -0.42);
-      frameBar(size / 2, 0, size / 2, size, -0.42);
+      frameBar(-size / 2, 0, size / 2, 0, -0.37);
+      frameBar(-size / 2, size, size / 2, size, -0.37);
+      frameBar(-size / 2, 0, -size / 2, size, -0.37);
+      frameBar(size / 2, 0, size / 2, size, -0.37);
       const fan = new THREE.Group();
       for (let i = 0; i < 4; i++) {
         const blade = mesh(new THREE.BoxGeometry(0.06, 0.32, 0.01), M.steel(), false);
@@ -955,11 +955,11 @@ function buildTarget(t: Target, level: Level, root: THREE.Group): TargetVisual {
         arm.rotation.z = (i * Math.PI) / 2;
         fan.add(arm);
       }
-      fan.position.set(0, size / 2, -0.6);
+      fan.position.set(0, size / 2, -0.378);
       fan.userData.fan = true;
       g.add(fan);
       glow = new THREE.Mesh(new THREE.PlaneGeometry(size, size), glowMat);
-      glow.position.set(0, size / 2, -0.41);
+      glow.position.set(0, size / 2, -0.36);
       break;
     }
     case 'gap': {
@@ -1146,7 +1146,7 @@ function buildTarget(t: Target, level: Level, root: THREE.Group): TargetVisual {
   if (t.socket === 'niche') local.set(-1.75 - 0.4, 2.1, -0.75);
   if (t.socket === 'statueTop') local.set(-1.6, 1.2, 0.2);
   if (t.socket === 'towerTop') local.set(0, 1.4, 0.95);
-  if (t.socket === 'vent') local.set(0.0, 1.2, -0.42);
+  if (t.socket === 'vent') local.set(0.0, 1.6, -0.36);
   if (t.socket === 'balcony') local.set(-side, (level.props.find((p) => p.kind === 'solid' && p.walkable)?.kind === 'solid' ? 1.0 : 1.2), 0.04);
   if (t.socket === 'elevator') local.set(-1.6, 1.4, 0);
   if (t.socket === 'keyhole') local.set(-0.9, 0.35, 0.03);

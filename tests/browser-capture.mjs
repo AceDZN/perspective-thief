@@ -56,15 +56,15 @@ const scenarios = {
   },
   async carry() {
     const { ctx, page } = await open(2);
-    await run(() => { AP.walkTo(-3, 2.5); AP.aimAt(-3, 1.5, -5.5); AP.act(); AP.tick(200); AP.walkTo(3.55 - 0.2, 4 + 1.99); AP.aimAt(5.5, 0.45, 4); })(page);
+    await run(() => { AP.walkTo(-3, 2.5); AP.aimAt(-3, 1.5, -5.5); AP.act(); AP.tick(200); AP.walkTo(1.2, 5.6); AP.aimAt(5.5, 0.4, 4); })(page);
     await shot(page, '02-core-carry');
     await ctx.close();
   },
   async crash() {
     const { ctx, page } = await open(12);
-    await run(() => { AP.walkTo(3.5, 3.7); AP.aimAt(3.5, 1.2, 2.5); AP.act(); AP.tick(100); AP.walkTo(0, 4.85); AP.aimAt(0, 1.6, -5.7); AP.act(); AP.tick(300); AP.tick(250); AP.pitchTo(0.25); })(page);
+    await run(() => { AP.walkTo(3.5, 3.7); AP.aimAt(3.5, 1.2, 2.5); AP.act(); AP.tick(100); AP.walkTo(0, 4.85); AP.aimAt(0, 1.6, -5.7); AP.act(); AP.tick(300); AP.tick(250); AP.pitchTo(0.22); AP.tick(250); })(page);
     await shot(page, '03-failure-crash');
-    await run(() => { AP.tick(1300); AP.tick(900); const g = AP.S().guard.pos; AP.face(g[0], g[1]); AP.pitchTo(0); })(page);
+    await run(() => { AP.turnTo(-1.0); AP.pitchTo(0.02); for (let i = 0; i < 40 && AP.S().phase !== 'chase'; i++) AP.tick(100); AP.tick(1100); })(page);
     await shot(page, '03b-guard-chase');
     await run(() => { const h = AP.S().hides[0]; AP.walkTo(h[0], h[1], 0.5); AP.tick(600); })(page);
     await shot(page, '03c-hidden');
@@ -172,6 +172,12 @@ const scenarios = {
     results.finale = r;
     console.log('finale', r.phase, r.stars, JSON.stringify(r.solved), JSON.stringify(r.stats), '\n  ' + r.log.join('\n  '));
     await page.screenshot({ path: `${out}/solve-18.png` });
+    await ctx.close();
+  },
+  async vent() {
+    const { ctx, page } = await open(2);
+    await run(() => { AP.walkTo(2.2, 5.2); AP.aimAt(5.5, 0.5, 4); })(page);
+    await shot(page, 'debug-vent');
     await ctx.close();
   },
   async mobile() {
