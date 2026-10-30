@@ -39,13 +39,13 @@ Real sequence on level 12: grab the painting at d₁ = 1.20 m, drop at d = 10.80
 
 ## Other captures
 
-- `06-shadows.jpg` — Hall of Shadows: real directional shadows from a single low lamp at atan(1.6/2) = 38.66°; the 7.2 m Tripo statue's shadow runs along its floor ruler; the crown glows on top. **Deviation:** the hall is brighter than "dark amber"; the mannequin's thin shadow is hard to read from the spawn point (you have to walk to its ruler).
+- `06-shadows.jpg` — Hall of Shadows: warm amber floor, real directional shadows from a single low brass lamp at atan(1.6/2) = 38.66°; the 7.2 m Tripo statue's shadow runs along its floor ruler; the crown glows on top; display cases line the walls. **Deviation:** the mannequin's thin shadow is hard to read from the spawn point (walk to its ruler).
 - `18-rooftop.jpg`, `18-finale-solved.jpg` — dawn rooftop, patrol guard with a visible flashlight cone, upright sarcophagi as hide spots, 9 m tower. **Deviation:** the city backdrop is plain boxes.
 - `01-mobile.jpg` — 390 × 844 touch: compact HUD, full-width objective panel, bezel bottom-centre, big "תפסו" button bottom-right, prompt above it, no overlaps.
 
 ## Remaining honest gaps
 
-1. Prop density and set dressing are below the mockups (fewer display cases, plainer ceilings and city).
+1. Set dressing is still lighter than the mockups (display cases now line the walls, but ceilings and the rooftop city are plain).
 2. The lens view model reads as a camera.
 3. Hall of Shadows could be darker and moodier.
 4. These are automated captures; nobody has judged them on a real phone or a classroom screen yet.

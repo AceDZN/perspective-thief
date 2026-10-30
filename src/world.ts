@@ -316,7 +316,7 @@ export function buildLevel(level: Level): LevelView {
   const fTex = floorTexture(R.theme).clone();
   fTex.wrapS = fTex.wrapT = THREE.RepeatWrapping;
   fTex.needsUpdate = true;
-  const floorMat = new THREE.MeshStandardMaterial({ map: fTex, roughness: roof ? 0.6 : 0.32, metalness: 0.05, envMapIntensity: 1.0 });
+  const floorMat = new THREE.MeshStandardMaterial({ map: fTex, color: R.theme === 'shadows' ? '#a08a6c' : '#ffffff', roughness: roof ? 0.6 : 0.32, metalness: 0.05, envMapIntensity: 1.0 });
   const floorRects: [number, number, number, number][] = [];
   const pits = R.pits ?? [];
   if (pits.length) {
