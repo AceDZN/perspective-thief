@@ -186,6 +186,9 @@ let successGlow: { exId: string; t: number } | null = null;
 let raccoonShow: { pos: THREE.Vector3; t: number } | null = null;
 let consequenceFx: ConsequenceKind | null = null;
 let lastPhase = '';
+let slowT = 0;
+let fovPunch = 0;
+const rings: { m: THREE.Mesh; t: number }[] = [];
 let intro: { t: number; dur: number; from: THREE.Vector3; look: THREE.Vector3 } | null = null;
 const solvedLaserOff = new Set<string>();
 
@@ -324,6 +327,19 @@ function updateChunks(dt: number): void {
 }
 function updateBursts(dt: number): void {
   updateChunks(dt);
+  for (let i = rings.length - 1; i >= 0; i--) {
+    const r = rings[i];
+    r.t += dt;
+    r.m.scale.setScalar(0.4 + r.t * 6);
+    (r.m.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.9 - r.t * 1.2);
+    if (r.t > 0.8) { worldFx.remove(r.m); r.m.geometry.dispose(); rings.splice(i, 1); }
+  }
+  if (fovPunch !== 0) {
+    fovPunch *= Math.pow(0.02, dt);
+    if (Math.abs(fovPunch) < 0.05) fovPunch = 0;
+  }
+  const baseFov = camera.aspect < 1 ? 82 : 70;
+  if (Math.abs(camera.fov - (baseFov + fovPunch)) > 0.01) { camera.fov = baseFov + fovPunch; camera.updateProjectionMatrix(); }
   for (let i = bursts.length - 1; i >= 0; i--) {
     const b = bursts[i];
     b.t += dt;
@@ -504,6 +520,8 @@ function clearLevel(): void {
   bursts.length = 0;
   for (const c of chunks) worldFx.remove(c.m);
   chunks.length = 0;
+  for (const r of rings) worldFx.remove(r.m);
+  rings.length = 0;
   view = null;
   intro = null;
   $('intro').hidden = true;
@@ -528,6 +546,7 @@ function enterLevel(l: Level): void {
   level = l;
   selected = l.id > 0 ? l.id : selected;
   sim = new Sim(l);
+  audio.theme = l.room.theme;
   view = buildLevel(l);
   scene.add(view.root);
   scene.fog = l.room.theme === 'rooftop' ? new THREE.Fog(themeFog(l), 40, 120) : new THREE.FogExp2(themeFog(l), 0.035);
@@ -592,6 +611,7 @@ function endIntro(): void {
 function openMenu(): void {
   clearLevel();
   level = null;
+  audio.theme = 'menu';
   mode = 'menu';
   hud.hidden = true;
   menuEl.hidden = false;
@@ -737,7 +757,7 @@ function onEvent(e: GameEvent): void {
   if (!sim || !view || !level) return;
   switch (e.type) {
     case 'step': audio.step(); viewBob += 1; break;
-    case 'grab': audio.grab(); showToast(e.pad ? `תפסתם ממרחק ⟦${e.d1.toFixed(2)}⟧ מ'` : `תפסתם · ⟦d₁ = ${e.d1.toFixed(2)}⟧ מ'`); break;
+    case 'grab': if (!reduced) fovPunch = 4; audio.grab(); showToast(e.pad ? `תפסתם ממרחק ⟦${e.d1.toFixed(2)}⟧ מ'` : `תפסתם · ⟦d₁ = ${e.d1.toFixed(2)}⟧ מ'`); break;
     case 'drop': audio.whoosh(); break;
     case 'floor': audio.whoosh(); showToast('העדשה עובדת רק על מטרה — המוצג חזר לכן', '', 2200); break;
     case 'fit': {
@@ -746,7 +766,19 @@ function onEvent(e: GameEvent): void {
       const t = level.targets.find((x) => x.id === e.targetId)!;
       const p = new THREE.Vector3(...t.anchor);
       burst(p.clone().add(new THREE.Vector3(0, 0.5, 0)), '#ffd36a', 70, 4, 0.12, 3, 1.6);
-      showToast('מושלם! נכנס בדיוק', 'good', 2000);
+      const fit = sim.fits[sim.fits.length - 1];
+      const stamp = $('stamp');
+      (stamp.querySelector('.st1') as HTMLElement).textContent = 'מושלם!';
+      (stamp.querySelector('.st2') as HTMLElement).innerHTML = fit ? html(`⟦k = ${Math.round(fit.k * 100) / 100}⟧ · נכנס בדיוק`) : 'נכנס בדיוק';
+      stamp.classList.remove('on');
+      void stamp.offsetWidth;
+      stamp.classList.add('on');
+      if (!reduced) { slowT = 0.55; fovPunch = -7; }
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 64), new THREE.MeshBasicMaterial({ color: '#ffd36a', transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(p.x, Math.max(0.03, p.y + 0.03), p.z);
+      worldFx.add(ring);
+      rings.push({ m: ring, t: 0 });
       shake = Math.max(shake, 0.04);
       if (t.success === 'raccoon' || t.success === 'open') {
         raccoonShow = { pos: p.clone().add(new THREE.Vector3(Math.sin(t.yaw) * 1.1 + Math.cos(t.yaw) * 0.9, 0, Math.cos(t.yaw) * 1.1 - Math.sin(t.yaw) * 0.9)), t: 0 };
@@ -1242,7 +1274,9 @@ function frame(now: number): void {
     if (!manual && !blocked) {
       const input = controls.read();
       if (cardKind === 'fail') input.act = false;
-      acc += dt;
+      let ts = 1;
+      if (slowT > 0) { slowT -= dt; ts = 0.35; }
+      acc += dt * ts;
       const n = Math.floor(acc / STEP);
       acc -= n * STEP;
       if (n > 0) stepSim(input, Math.min(n, 4));

@@ -1,10 +1,21 @@
 // Synthesized sound: no files, starts after the first gesture.
+
+/** A sneaky pizzicato bass line per hall (Hz, 0 = rest), 16 steps. */
+const THEMES: Record<string, number[]> = {
+  menu: [110, 0, 131, 0, 147, 0, 131, 104, 110, 0, 165, 0, 147, 131, 0, 98],
+  lengths: [110, 0, 131, 0, 147, 0, 131, 104, 110, 0, 165, 0, 147, 131, 0, 98],
+  shadows: [98, 0, 0, 117, 0, 0, 104, 0, 98, 0, 0, 87, 0, 0, 92, 0],
+  canvas: [131, 0, 165, 196, 0, 165, 147, 0, 131, 0, 165, 196, 220, 0, 196, 0],
+  vault: [82, 82, 0, 98, 0, 87, 0, 82, 82, 0, 117, 0, 110, 0, 98, 0],
+  rooftop: [147, 0, 185, 0, 220, 0, 185, 165, 147, 0, 196, 0, 220, 247, 0, 220],
+};
 export class Audio {
   ctx: AudioContext | null = null;
   master: GainNode | null = null;
   muted = false;
   private siren: { osc: OscillatorNode; lfo: OscillatorNode; gain: GainNode } | null = null;
   private music: { nodes: AudioNode[]; gain: GainNode; timer: number } | null = null;
+  theme = 'menu';
 
   unlock(): void {
     if (this.ctx) {
@@ -128,10 +139,10 @@ export class Audio {
     const gain = c.createGain();
     gain.gain.value = 0.35;
     gain.connect(this.master);
-    const notes = [110, 0, 131, 0, 147, 0, 131, 104, 110, 0, 165, 0, 147, 131, 0, 98];
     let i = 0;
     const tick = () => {
       if (!this.ctx) return;
+      const notes = THEMES[this.theme] ?? THEMES.menu;
       const f = notes[i++ % notes.length];
       if (f) {
         const t = c.currentTime;

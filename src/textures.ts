@@ -145,6 +145,27 @@ export function floorTexture(theme: string): THREE.CanvasTexture {
   });
 }
 
+/** Dark walnut wall paneling with raised panels and a gold line (mezzanine and balcony faces). */
+export function panelTexture(): THREE.CanvasTexture {
+  return cached('panel', () => {
+    const [c, g] = canvas(512, 512);
+    g.drawImage(woodTexture(true).image as HTMLCanvasElement, 0, 0, 512, 512);
+    g.fillStyle = 'rgba(20,10,4,0.35)';
+    g.fillRect(0, 0, 512, 512);
+    for (const [x, y, w, h] of [[28, 28, 200, 456], [284, 28, 200, 456]]) {
+      g.fillStyle = 'rgba(255,200,140,0.06)';
+      g.fillRect(x, y, w, h);
+      g.strokeStyle = 'rgba(0,0,0,0.6)';
+      g.lineWidth = 10;
+      g.strokeRect(x, y, w, h);
+      g.strokeStyle = 'rgba(225,185,95,0.85)';
+      g.lineWidth = 4;
+      g.strokeRect(x + 16, y + 16, w - 32, h - 32);
+    }
+    return tex(c, [1, 1]);
+  });
+}
+
 /** Cut-stone blocks for big plain faces (mezzanines, balconies, tower). */
 export function stoneBlockTexture(tint = '#b9b4aa'): THREE.CanvasTexture {
   return cached('stoneblock-' + tint, () => {

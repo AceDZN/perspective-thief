@@ -20,6 +20,7 @@ import {
   rulerTexture,
   skyTexture,
   stoneBlockTexture,
+  panelTexture,
   velvetTexture,
   wallTexture,
   woodTexture,
@@ -830,9 +831,9 @@ function buildProp(p: Prop, level: Level, lasers: THREE.Object3D[], moonbeams: T
       const big = (p.mat === 'marble' || p.mat === 'stone') && sh > 1.2 && Math.max(sw, sd) > 2.5;
       if (big) {
         // Cut-stone faces with a brass cap instead of a blank slab.
-        const t = stoneBlockTexture(p.mat === 'stone' ? '#7d7872' : '#9d968a').clone();
+        const t = (p.mat === 'stone' ? stoneBlockTexture('#7d7872') : panelTexture()).clone();
         t.wrapS = t.wrapT = THREE.RepeatWrapping;
-        t.repeat.set(Math.max(sw, sd) / 3, sh / 1.6);
+        t.repeat.set(Math.max(sw, sd) / (p.mat === 'stone' ? 3 : 2), p.mat === 'stone' ? sh / 1.6 : 1);
         t.needsUpdate = true;
         m = new THREE.MeshStandardMaterial({ map: t, roughness: 0.75 });
         g.add(boxAt([p.min[0] - 0.02, p.max[1] - 0.12, p.min[2] - 0.02], [p.max[0] + 0.02, p.max[1], p.max[2] + 0.02], M.darkBrass()));
