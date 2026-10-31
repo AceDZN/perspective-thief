@@ -169,6 +169,10 @@ export class Sim {
   aim: Aim = { kind: 'none', point: [0, 0, 0], d: 0, valid: false };
   stats: Stats = { hints: 0, alarms: 0, failures: 0, regrabs: 0, caught: 0 };
   hintShown = false;
+  /** The needed k was shown on a failure card in an earlier run of this level: cap at 2 stars. */
+  revealedBefore = false;
+  /** The needed k was shown in this run. */
+  kRevealed = false;
   events: GameEvent[] = [];
   log: LearnEvent[] = [];
   stars = 0;
@@ -491,12 +495,15 @@ export class Sim {
       else if (check.verdict === 'noFit') kind = 'noFit';
       this.learn({ action: 'drop', exId: ex.def.id, targetId: t.id, d1, d2, k, kNeeded: check.kNeeded, outcome: kind ?? 'fit', attempt, firstUnaided: attempt === 1 && !this.hintShown });
       if (!kind) {
-        this.fits.push({ targetId: t.id, k, kNeeded: check.kNeeded, accuracy: Math.max(0, 1 - Math.abs(k - check.kNeeded) / check.kNeeded), firstTry: attempt === 1 && !this.hintShown });
+        this.fits.push({ targetId: t.id, k, kNeeded: check.kNeeded, accuracy: Math.max(0, 1 - Math.abs(k - check.kNeeded) / check.kNeeded), firstTry: attempt === 1 && !this.hintShown && !this.revealedBefore });
         this.whoosh = { exId: ex.def.id, from: { scale: ex.scale }, to: [...t.anchor] as V3, yaw: t.yaw, newScale, t: 0, dur: 0.45, verdict: 'fit' };
         this.setPhase('whoosh');
         return true;
       }
-      const lines = explain(check, measure, d1, d2, attempt);
+      // The finale has no hints: its card never goes past the ratio kind.
+      const shown = this.level.noHints ? Math.min(attempt, 2) : attempt;
+      if (shown >= 3) this.kRevealed = true;
+      const lines = explain(check, measure, d1, d2, shown);
       if (kind === 'roofCrash' && check.verdict === 'fit') lines.unshift('גבוה מהתקרה!');
       return this.startFail({ kind, exId: ex.def.id, targetId: t.id, check, d1, d2, lines, newScale, point: [...t.anchor] as V3, yaw: t.yaw, alarm: kind === 'crash' || kind === 'roofCrash' });
     }
@@ -608,6 +615,7 @@ export class Sim {
       const e = this.level.exit;
       if (this.hdist(e.pos) <= e.r && Math.abs(P.y - e.pos[1]) < 0.7) {
         this.stars = starsFor(this.stats);
+        if (this.revealedBefore) this.stars = Math.min(this.stars, 2);
         this.setPhase('won');
         this.events.push({ type: 'won', stars: this.stars });
       }
@@ -767,7 +775,8 @@ export class Sim {
     if (f.alarm) {
       this.stats.alarms++;
       this.events.push({ type: 'alarm' });
-      this.startChase(true);
+      // A patrolling guard comes from where he is, not from his door.
+      this.startChase(!this.level.patrol);
     } else {
       this.setPhase('explain');
     }

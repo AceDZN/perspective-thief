@@ -396,6 +396,47 @@ export function bannerTexture(): THREE.CanvasTexture {
   });
 }
 
+/** A big number on a brass tag (triangle side lengths): readable from a few metres. */
+export function numberTexture(text: string): THREE.CanvasTexture {
+  return cached('num-' + text, () => {
+    const [c, g] = canvas(256, 140);
+    g.fillStyle = '#e8c873';
+    roundRect(g, 4, 4, 248, 132, 26);
+    g.fill();
+    g.strokeStyle = '#3a2506';
+    g.lineWidth = 8;
+    roundRect(g, 10, 10, 236, 120, 22);
+    g.stroke();
+    g.fillStyle = '#2a1904';
+    g.font = '800 104px Rubik, sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, 128, 76);
+    return tex(c);
+  });
+}
+
+/** Soft vertical light shaft (bright at the top, fading out at the edges and bottom). */
+export function shaftTexture(): THREE.CanvasTexture {
+  return cached('shaft', () => {
+    const [c, g] = canvas(128, 256);
+    const v = g.createLinearGradient(0, 0, 0, 256);
+    v.addColorStop(0, 'rgba(255,255,255,0.9)');
+    v.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = v;
+    g.fillRect(0, 0, 128, 256);
+    g.globalCompositeOperation = 'destination-in';
+    const h = g.createLinearGradient(0, 0, 128, 0);
+    h.addColorStop(0, 'rgba(0,0,0,0)');
+    h.addColorStop(0.3, 'rgba(0,0,0,1)');
+    h.addColorStop(0.7, 'rgba(0,0,0,1)');
+    h.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = h;
+    g.fillRect(0, 0, 128, 256);
+    return tex(c);
+  });
+}
+
 export interface LabelTex {
   texture: THREE.CanvasTexture;
   aspect: number;

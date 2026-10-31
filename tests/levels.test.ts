@@ -119,3 +119,14 @@ test('a drop anywhere but a target sends the exhibit back to its pedestal at its
   assert.deepEqual(ex.pos, [lvl.exhibits[0].pos[0], lvl.exhibits[0].pedestal, lvl.exhibits[0].pos[1]]);
   assert.equal(sim.stats.failures, 0);
 });
+
+test('after a crash at the drop spot, a hide spot is always reachable well before the guard (≥ 1.5 s head start)', async () => {
+  const { WALK, GUARD_CHASE } = await import('../src/sim.ts');
+  for (const level of LEVELS) {
+    for (const s of plan(level)) {
+      const st = s.stand!;
+      const margin = Math.max(...level.hides.map((h) => Math.hypot(h[0] - level.guardDoor[0], h[1] - level.guardDoor[1]) / GUARD_CHASE - (Math.hypot(h[0] - st[0], h[1] - st[1]) / WALK + 1.0)));
+      assert.ok(margin >= 1.5, `level ${level.id} ${s.target.id}: head start ${margin.toFixed(2)} s`);
+    }
+  }
+});

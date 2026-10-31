@@ -22,6 +22,8 @@ import {
   stoneBlockTexture,
   panelTexture,
   facadeTexture,
+  numberTexture,
+  shaftTexture,
   velvetTexture,
   wallTexture,
   woodTexture,
@@ -68,7 +70,7 @@ export function labelPlane(lines: string[], width: number, style: 'brass' | 'pap
   const { texture, aspect } = labelTexture(lines, style);
   const m = new THREE.Mesh(
     new THREE.PlaneGeometry(width, width / aspect),
-    new THREE.MeshStandardMaterial({ map: texture, roughness: 0.35, metalness: style === 'brass' ? 0.55 : 0, emissive: '#ffffff', emissiveMap: texture, emissiveIntensity: 0.22 }),
+    new THREE.MeshStandardMaterial({ map: texture, roughness: 0.75, metalness: style === 'brass' ? 0.25 : 0, emissive: '#ffffff', emissiveMap: texture, emissiveIntensity: 0.18 }),
   );
   m.receiveShadow = true;
   return m;
@@ -151,7 +153,7 @@ export function buildExhibitMesh(def: Exhibit | { shape: Shape }, orientation = 
       const frame = mesh(new THREE.BoxGeometry(s.w, s.h, s.t * 0.6), M.brass());
       frame.position.set(0, s.h / 2, s.t * 0.3);
       g.add(frame);
-      const glass = new THREE.Mesh(new THREE.PlaneGeometry(s.w * 0.84, s.h * 0.9), mat('mirror', () => new THREE.MeshStandardMaterial({ color: '#dfe9f0', roughness: 0.02, metalness: 1 })));
+      const glass = new THREE.Mesh(new THREE.PlaneGeometry(s.w * 0.84, s.h * 0.9), mat('mirror', () => new THREE.MeshStandardMaterial({ color: '#cfe2ff', roughness: 0.12, metalness: 0.85, emissive: '#3a5a8a', emissiveIntensity: 0.6, envMapIntensity: 2 })));
       glass.position.set(0, s.h / 2, s.t * 0.61);
       g.add(glass);
       const gem = mesh(new THREE.SphereGeometry(s.w * 0.12, 12, 8), mat('ruby', () => new THREE.MeshStandardMaterial({ color: '#ff3355', emissive: '#ff1133', emissiveIntensity: 0.8, roughness: 0.1 })));
@@ -167,7 +169,8 @@ export function buildExhibitMesh(def: Exhibit | { shape: Shape }, orientation = 
       for (let i = 0; i < 3; i++) {
         const a = pts[i], b = pts[(i + 1) % 3];
         const sideIndex = (orientation + i) % 3;
-        const lbl = labelPlane([`⟦${s.labels[sideIndex]}⟧`], Math.min(0.22, s.sides[sideIndex] * 0.5), 'brass');
+        const lw = Math.min(0.2, s.sides[sideIndex] * 0.42);
+        const lbl = new THREE.Mesh(new THREE.PlaneGeometry(lw, lw * 0.55), new THREE.MeshStandardMaterial({ map: numberTexture(s.labels[sideIndex]), roughness: 0.6, emissive: '#ffffff', emissiveMap: numberTexture(s.labels[sideIndex]), emissiveIntensity: 0.25 }));
         const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
         // Pull the label toward the centroid so it sits on the sign.
         const cx = (pts[0][0] + pts[1][0] + pts[2][0]) / 3, cy = (pts[0][1] + pts[1][1] + pts[2][1]) / 3;
@@ -678,7 +681,7 @@ export function buildLevel(level: Level): LevelView {
   for (const t of level.targets) {
     targets.set(t.id, buildTarget(t, level, root));
     const fwd = new THREE.Vector3(Math.sin(t.yaw), 0, Math.cos(t.yaw));
-    const sp = new THREE.SpotLight('#ffd9a0', 16, 12, 0.55, 0.7, 1.6);
+    const sp = new THREE.SpotLight('#ffd9a0', 10, 12, 0.5, 0.75, 1.6);
     const c = new THREE.Vector3(...t.zone.c);
     sp.position.copy(c).addScaledVector(fwd, 2.2).setY(Math.min(R.h - 0.3, c.y + 4.2));
     sp.target.position.copy(c);
@@ -816,10 +819,20 @@ export function buildLevel(level: Level): LevelView {
   const coneLen = 5.5, coneHalf = (45 * Math.PI) / 180;
   const fanGeo = new THREE.CircleGeometry(coneLen, 40, -Math.PI / 2 - coneHalf, 2 * coneHalf);
   fanGeo.rotateX(-Math.PI / 2);
-  const fan = new THREE.Mesh(fanGeo, new THREE.MeshBasicMaterial({ map: glowSprite('#fff2b0'), color: '#fff6c8', transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending, depthWrite: false }));
+  const fan = new THREE.Mesh(fanGeo, new THREE.MeshBasicMaterial({ map: glowSprite('#fff2b0'), color: '#fff6c8', transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }));
   fan.position.y = 0.03;
   fan.name = 'flashlight';
   guard.root.add(fan);
+  // The "too close" circle: he notices you within 1.4 m even from behind.
+  const near = new THREE.Mesh(new THREE.RingGeometry(1.32, 1.4, 48), new THREE.MeshBasicMaterial({ color: '#ffe9a8', transparent: true, opacity: 0.55, depthWrite: false }));
+  near.rotation.x = -Math.PI / 2;
+  near.position.y = 0.035;
+  guard.root.add(near);
+  const edgeGeo = new THREE.RingGeometry(coneLen - 0.08, coneLen, 40, 1, -Math.PI / 2 - coneHalf, 2 * coneHalf);
+  edgeGeo.rotateX(-Math.PI / 2);
+  const edge = new THREE.Mesh(edgeGeo, new THREE.MeshBasicMaterial({ color: '#ffe9a8', transparent: true, opacity: 0.6, depthWrite: false }));
+  edge.position.y = 0.035;
+  guard.root.add(edge);
   const torch = new THREE.SpotLight('#fff0c0', 18, coneLen + 1, coneHalf, 0.5, 1.2);
   torch.position.set(0.3, 1.1, 0.2);
   torch.target.position.set(0, 0, coneLen);
@@ -1052,7 +1065,7 @@ function buildProp(p: Prop, level: Level, lasers: THREE.Object3D[], moonbeams: T
       const frame = mesh(new THREE.TorusGeometry(p.w / 2, 0.06, 6, 24, Math.PI), M.darkBrass(), false);
       frame.position.y = p.h / 2;
       g.add(frame);
-      const beam = new THREE.Mesh(new THREE.PlaneGeometry(p.w, 6), new THREE.MeshBasicMaterial({ color: '#7fa6ff', transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+      const beam = new THREE.Mesh(new THREE.PlaneGeometry(p.w * 1.2, 6), new THREE.MeshBasicMaterial({ map: shaftTexture(), color: '#7fa6ff', transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
       beam.position.set(0, -1.6, 2.4);
       beam.rotation.x = -0.9;
       g.add(beam);
@@ -1224,7 +1237,7 @@ function buildTarget(t: Target, level: Level, root: THREE.Group): TargetVisual {
         const o = t.orientation ?? 0;
         for (let i = 0; i < 3; i++) {
           const a = hole[i], c = hole[(i + 1) % 3];
-          const lbl = labelPlane([`⟦${labels[(o + i) % 3]}⟧`], 0.28, 'brass');
+          const lbl = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.165), new THREE.MeshStandardMaterial({ map: numberTexture(labels[(o + i) % 3]), roughness: 0.6, emissive: '#ffffff', emissiveMap: numberTexture(labels[(o + i) % 3]), emissiveIntensity: 0.25 }));
           const mx = (a[0] + c[0]) / 2, my = (a[1] + c[1]) / 2;
           const cx2 = (hole[0][0] + hole[1][0] + hole[2][0]) / 3, cy2 = (hole[0][1] + hole[1][1] + hole[2][1]) / 3;
           lbl.position.set(mx - (cx2 - mx) * 0.25, my - (cy2 - my) * 0.25, 0.03);
@@ -1299,6 +1312,13 @@ function buildTarget(t: Target, level: Level, root: THREE.Group): TargetVisual {
         spoke.rotation.z = (i * Math.PI) / 4;
         g.add(spoke);
       }
+      // A dark round escutcheon so the small key and keyhole read against the steel door.
+      const plateK = mesh(new THREE.CircleGeometry(0.32, 40), mat('escutcheon', () => new THREE.MeshStandardMaterial({ color: '#141418', roughness: 0.6 })), false);
+      plateK.position.set(0, 0.03, 0.004);
+      g.add(plateK);
+      const rimK = mesh(new THREE.TorusGeometry(0.32, 0.025, 8, 40), M.brass(), false);
+      rimK.position.set(0, 0.03, 0.01);
+      g.add(rimK);
       // Key silhouette at the original size.
       const sil = buildExhibitMesh({ shape: { type: 'key', l: 0.12 } });
       sil.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) m.material = M.void(); });

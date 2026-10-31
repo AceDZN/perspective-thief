@@ -147,7 +147,7 @@ export function explain(check: DropCheck, m: Measure, d1: number, d2: number, at
     lines.push('הצורה הזאת לא דומה למסגרת: הזוויות והצלעות שלה לא מתאימות לשל המסגרת, ולכן אין ⟦k⟧ שיתאים. שטח שווה לא אומר דמיון.');
     return lines;
   }
-  const kind = m.power === 1 ? 'יחס אורכים — ⟦k⟧ עצמו' : m.power === 2 ? 'יחס שטחים — השטח גדל פי ⟦k²⟧' : 'יחס נפחים — המשקל גדל פי ⟦k³⟧';
+  const kind = m.power === 1 ? 'יחס אורכים — כל אורך גדל פי ⟦k⟧' : m.power === 2 ? 'יחס שטחים — השטח גדל פי ⟦k²⟧' : 'יחס נפחים — המשקל גדל פי ⟦k³⟧';
   if (attempt >= 2) lines.push(`זה ${kind}.`);
   if (attempt >= 3) {
     const n = check.need;

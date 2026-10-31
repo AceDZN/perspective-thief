@@ -63,7 +63,9 @@ const MUTATORS: Record<number, Mutator[]> = {
       ex.placard = ['פסל ראש משיש', `גובה ⟦${n(b)}⟧ מ'`];
       const t = L.targets[0];
       t.need = { measure: 'height', value: need };
-      t.plate = ['כן ריק · חיישן משקל', `גובה הפסל ⟦${n(need)}⟧ מ'`];
+      t.plate = ['כן ריק · חיישן גובה', `גובה הפסל ⟦${n(need)}⟧ מ'`];
+      // The neighbouring busts show the same height the sensor asks for.
+      L.props = L.props.map((p) => (p.kind === 'model' && p.model === 'bust' && p.pos[1] === 1 ? { ...p, h: need } : p));
       L.objective = `החליפו את הפסל החסר: החיישן מצפה לפסל בגובה ⟦${n(need)}⟧ מ'`;
       L.hint = [`השוו את גובה הפסל ⟦${n(b)}⟧ לגובה הנדרש ⟦${n(need)}⟧ — יחס אורכים.`];
       setPad(L, 'bust', d1);
@@ -218,7 +220,7 @@ export function generateLevel(world: number, seed: number): Level {
     const L = (muts[0] ?? MUTATORS[w][0])(clone(base), r);
     if (!L) continue;
     L.id = -(tid * 1000 + (seed % 1000));
-    L.title = `חדר מפתיע (${base.title})`;
+    L.title = `חדר אתגר · ${base.title}`;
     L.tutorial = undefined;
     L.noHints = false;
     if (verifyGenerated(L)) return L;

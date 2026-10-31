@@ -45,13 +45,13 @@ function starsHtml(n: number, of = 3): string {
 // ─────────────── persistence ───────────────
 const KEY = 'perspective-thief:v1';
 const LEARN = 'perspective-thief:learn';
-interface Save { stars: Record<number, number>; reduced: boolean; muted: boolean; current: number; challenges: Record<number, number>; seenWorlds: number[]; sens: number }
+interface Save { stars: Record<number, number>; reduced: boolean; muted: boolean; current: number; challenges: Record<number, number>; seenWorlds: number[]; sens: number; revealed: Record<number, boolean> }
 function loadSave(): Save {
   try {
     const s = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-    return { stars: s.stars ?? {}, reduced: !!s.reduced, muted: !!s.muted, current: s.current ?? 1, challenges: s.challenges ?? {}, seenWorlds: s.seenWorlds ?? [], sens: s.sens ?? 1 };
+    return { stars: s.stars ?? {}, reduced: !!s.reduced, muted: !!s.muted, current: s.current ?? 1, challenges: s.challenges ?? {}, seenWorlds: s.seenWorlds ?? [], sens: s.sens ?? 1, revealed: s.revealed ?? {} };
   } catch {
-    return { stars: {}, reduced: false, muted: false, current: 1, challenges: {}, seenWorlds: [], sens: 1 };
+    return { stars: {}, reduced: false, muted: false, current: 1, challenges: {}, seenWorlds: [], sens: 1, revealed: {} };
   }
 }
 const save = loadSave();
@@ -188,6 +188,7 @@ let raccoonShow: { pos: THREE.Vector3; t: number } | null = null;
 let consequenceFx: ConsequenceKind | null = null;
 let lastPhase = '';
 let slowT = 0;
+const roofFx: THREE.Object3D[] = [];
 let fovPunch = 0;
 const rings: { m: THREE.Mesh; t: number }[] = [];
 let intro: { t: number; dur: number; from: THREE.Vector3; look: THREE.Vector3 } | null = null;
@@ -415,6 +416,7 @@ function showBriefing(l: Level): boolean {
 
 function showFail(): void {
   if (!sim?.failure) return;
+  if (sim.kRevealed && level && level.id > 0 && !save.revealed[level.id]) { save.revealed[level.id] = true; persist(); }
   const f = sim.failure;
   const lines = f.lines.map((t, i) => `<p class="${i < f.lines.length - 1 || f.lines.length < 3 ? 'math' : ''}">${html(t)}</p>`).join('');
   showCard('fail', `<h2>אופס!</h2><p><b>${FAIL_TITLE[f.kind]}</b></p>${lines}<div class="row"><button class="btn primary retry" id="failGo" aria-label="נסו שוב">⟳</button></div><p class="stats">החפץ חזר לכן שלו. נסו שוב.</p>`);
@@ -429,7 +431,7 @@ function showWin(): void {
   if (!isGen) save.stars[level.id] = Math.max(prev, stars);
   else save.challenges[level.world] = (save.challenges[level.world] ?? 0) + 1;
   const next = isGen ? undefined : LEVELS.find((l) => l.id === level!.id + 1);
-  if (next) { save.current = next.id; selected = next.id; }
+  if (next) { if (next.id > save.current) save.current = next.id; selected = next.id; }
   persist();
   flushLearn(sim);
   const s = sim.stats;
@@ -438,12 +440,13 @@ function showWin(): void {
   const badges: string[] = [];
   if (sim.fits.length && sim.fits.every((f) => f.firstTry)) badges.push('🎯 בניסיון הראשון, בלי עזרה');
   if (!s.alarms) badges.push('🤫 בלי אזעקה');
-  if (acc >= 0.995) badges.push('🔬 דיוק של צלף');
+  if (acc >= 0.995 && !s.failures) badges.push('🔬 דיוק של צלף');
+  if (sim.revealedBefore) badges.push('ℹ️ התשובה הוצגה בניסיון קודם — עד 2 כוכבים');
   if (stars === 3 && prev < 3 && prev > 0) badges.push('⭐ שיפרתם ל־3 כוכבים');
   const why: string[] = [];
   if (s.hints) why.push('רמז');
   if (s.alarms) why.push('אזעקה');
-  if (s.failures) why.push(`${s.failures} הנחות שגויות`);
+  if (s.failures) why.push(s.failures === 1 ? 'הנחה שגויה אחת' : `${s.failures} הנחות שגויות`);
   if (s.caught) why.push('נתפסתם');
   const starSpans = [0, 1, 2].map((i) => `<span class="${i < stars ? '' : 'off'}" style="animation-delay:${0.15 + i * 0.25}s">★</span>`).join('');
   const worldDone = !isGen && !!next && next.world !== level.world;
@@ -453,7 +456,7 @@ function showWin(): void {
   showCard('win', `<h2>${isGen ? 'שוד מוצלח!' : 'נמלטתם!'}</h2><div class="bigstars">${starSpans}</div>
   <p class="wintitle">${html(level.title)}</p>
   <div class="results">
-    <div><span class="rl">דיוק ההנחה</span><span class="rv"><bdi dir="ltr">${(acc * 100).toFixed(1)}%</bdi></span></div>
+    <div><span class="rl">דיוק ההנחה המוצלחת</span><span class="rv"><bdi dir="ltr">${(acc * 100).toFixed(1)}%</bdi></span></div>
     <div><span class="rl">זמן</span><span class="rv"><bdi dir="ltr">${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}</bdi></span></div>
     <div><span class="rl">איבדתם כוכב על</span><span class="rv small">${why.length ? why.join(' · ') : '—'}</span></div>
   </div>
@@ -478,7 +481,7 @@ function showPause(): void {
   <label class="toggle"><input type="checkbox" id="optReduced" ${reduced ? 'checked' : ''}> הפחתת תנועה</label>
   <label class="toggle"><input type="checkbox" id="optMute" ${audio.muted ? 'checked' : ''}> השתקה</label>
   <label class="toggle">רגישות העכבר <input type="range" id="optSens" min="0.4" max="2.2" step="0.1" value="${save.sens}"></label>
-  <p class="stats">תנועה: <span class="ltr">WASD</span> / חיצים · עכבר להסתכל · לחיצה לתפוס/להניח · <span class="ltr">R</span> לסובב · <span class="ltr">Shift</span> לאט · רווח לטפס · <span class="ltr">H</span> רמז</p>
+  <p class="stats">${document.body.classList.contains('touch') ? 'מקל משמאל לזוז · גררו מימין להסתכל · הכפתור הגדול תופס ומניח · ⟳ מסובב' : 'תנועה: <span class="ltr">WASD</span> · חיצים להסתובב · עכבר להסתכל · לחיצה לתפוס/להניח · <span class="ltr">R</span> לסובב · <span class="ltr">Shift</span> לאט · רווח לטפס · <span class="ltr">H</span> רמז'}</p>
   <div class="row"><button class="btn primary" id="pResume">המשך</button><button class="btn" id="pRestart">התחלה מחדש</button><button class="btn" id="pMap">למפה</button></div></div>`;
   $('pResume').onclick = resume;
   $('pRestart').onclick = () => { resume(); if (level) (level.id > 0 ? startLevel(level.id) : startGenerated(level.world)); };
@@ -549,6 +552,7 @@ function enterLevel(l: Level): void {
   level = l;
   selected = l.id > 0 ? l.id : selected;
   sim = new Sim(l);
+  sim.revealedBefore = l.id > 0 && !!save.revealed[l.id];
   audio.theme = l.room.theme;
   view = buildLevel(l);
   scene.add(view.root);
@@ -594,7 +598,7 @@ function enterLevel(l: Level): void {
   intro = { t: 0, dur: reduced ? 1.2 : 3.2, from, look };
   const w = WORLDS.find((x) => x.id === l.world)!;
   $('introWorld').innerHTML = html(`${w.title} · ${w.tier}`);
-  $('introNum').innerHTML = l.id > 0 ? html(`שלב ⟦${l.id}⟧`) : 'חדר אתגר';
+  $('introNum').innerHTML = l.id > 0 ? html(`שלב ⟦${l.id}⟧`) : '★ חדר אתגר';
   $('introTitle').innerHTML = html(l.title);
   $('introObj').innerHTML = html(l.objective);
   $('intro').hidden = false;
@@ -673,7 +677,7 @@ function renderMenuDom(): void {
   const w = WORLDS.find((x) => x.id === l.world)!;
   const transfer = [5, 10, 15, 18].includes(l.id);
   const genOk = LEVELS.filter((x) => x.world === l.world).every((x) => (save.stars[x.id] ?? 0) > 0) && l.world < 5;
-  $('levelCard').innerHTML = `<h3>${html(`שלב ⟦${l.id}⟧ · ${l.title}`)}${l.extension ? '<span class="tag">הרחבה</span>' : ''}${transfer ? '<span class="tag">העברה</span>' : ''}</h3><p><span class="tag">${html(w.tier)}</span> ${html(w.title)} — ${html(w.subtitle)}</p><p>${html(l.objective)}</p><p class="skillline">${html(l.skill)}</p><div class="cstars">${starsHtml(save.stars[l.id] ?? 0)}</div>${genOk ? `<button class="btn" id="btnGen">חדר חדש ב${html(w.title)}</button>` : ''}`;
+  $('levelCard').innerHTML = `<h3>${html(`שלב ⟦${l.id}⟧ · ${l.title}`)}${l.extension ? '<span class="tag">הרחבה</span>' : ''}${transfer ? '<span class="tag">העברה</span>' : ''}</h3><p><span class="tag">${html(w.tier)}</span> ${html(w.title)} — ${html(w.subtitle)}</p><p>${html(l.objective)}</p><p class="skillline">${html(l.skill)}</p><div class="cstars">${starsHtml(save.stars[l.id] ?? 0)}</div>${genOk ? `<button class="btn" id="btnGen">★ חדר אתגר ב${html(w.title)}</button>` : ''}`;
   const gb = document.getElementById('btnGen');
   if (gb) gb.onclick = () => { audio.unlock(); startGenerated(l.world); };
   $('btnContinue').innerHTML = html(`${save.stars[l.id] ? 'שחקו שוב' : 'המשך'} · שלב ⟦${l.id}⟧ ‹`);
@@ -791,7 +795,7 @@ function onEvent(e: GameEvent): void {
       if (t.socket === 'loop' || t.socket === 'plate') solvedLaserOff.add(t.id);
       break;
     }
-    case 'exitOpen': setTimeout(() => showToast('היציאה נפתחה! רוצו אליה', 'good', 2600), 1200); break;
+    case 'exitOpen': setTimeout(() => { if (!cardKind && sim?.phase !== 'won') showToast('היציאה נפתחה! רוצו אליה', 'good', 2600); }, 1200); break;
     case 'fail': {
       consequenceFx = e.kind;
       const f = sim.failure!;
@@ -816,9 +820,11 @@ function onEvent(e: GameEvent): void {
           holeM.rotation.x = Math.PI / 2;
           holeM.position.set(p.x, level.room.h - 0.02, p.z + (lb.max[2] + lb.min[2]) / 2);
           view.root.add(holeM);
+          roofFx.push(holeM);
           const moonShaft = new THREE.Mesh(new THREE.CylinderGeometry(r0 * 0.8, r0 * 1.2, level.room.h, 18, 1, true), new THREE.MeshBasicMaterial({ color: '#9fc4ff', transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
           moonShaft.position.set(holeM.position.x, level.room.h / 2, holeM.position.z);
           view.root.add(moonShaft);
+          roofFx.push(moonShaft);
           debris(new THREE.Vector3(p.x, level.room.h - 0.3, p.z + 0.5), 14);
         } else debris(p.clone().add(new THREE.Vector3(0, 0.8, 0.4)), 8);
         flash(0.35);
@@ -858,6 +864,8 @@ function syncView(dt: number, realtime: boolean): void {
   if (phase !== lastPhase) {
     if (phase === 'explain' && !cardKind) showFail();
     if (lastPhase === 'explain' && cardKind === 'fail') hideCard();
+    // The ceiling is repaired once the chase is over.
+    if (phase === 'play' || phase === 'explain') { for (const o of roofFx) o.parent?.remove(o); roofFx.length = 0; }
     lastPhase = phase;
   }
   // Camera.
@@ -1060,7 +1068,7 @@ function syncView(dt: number, realtime: boolean): void {
       else if (G.mode === 'search' && G.t > 1.2) gr.play(G.t > 2.8 ? ['scratch', 'confus', 'think', 'look', 'idle'] : ['look', 'idle']);
       else if (moving) gr.play(['walk']);
       else gr.play(['idle', 'look', 'breath']);
-      gr.update(G.mode === 'patrol' && !sim.moved ? 0 : dt, moving);
+      gr.update(dt, moving);
     }
     if (G.mode === 'off') gr.update(dt, false);
   }
