@@ -16,14 +16,15 @@ Original prompt: build Perspective Thief (גנב הפרספקטיבה), a real-3
 9. **AAA pass (user request: "make it look awesome… test each and every level… until it's perfect")**: audited all 18 levels from contact sheets; new room art (floors, pilasters, chandeliers, panels, cases, target spotlights, dust, grade), deep chasm, gloved brass lens, rooftop city/sun/string lights; cinematic intro, hall briefings with difficulty tiers, results screen with accuracy and badges, challenge rooms on the map (two templates per hall), success stamp, slow-mo, shockwave, per-hall music, sensitivity setting. Fixed z-fighting, and a global bug where sun shadows only existed within 5 m of each room's centre.
 10. **Round-2 playtest** (`PLAYTEST2.md`): every level played with three wrong drops each; 21 findings; all but the ×3-constant one fixed (see the response table). Re-verified all 18 levels in the browser.
 
+11. **"Make it even better" pass**: re-authored levels 9 (k 3.5, a 1.75 m balcony you can't climb), 11 (k 3.5), 15 (k 4, a bigger frame) and 16 (k 2) so "always drop at 3× grab" wins 3 targets instead of 7 (traps test now caps every constant at 4 targets / 3 levels); new audio engine (per-hall layered music, reverb, chase layer, heartbeat, ambience; `tests/audio-check.mjs`); guard and raccoon speech bubbles; worked solution on the results screen; personal bests and thief ranks; idle raccoon nudge; uplight washes in the Hall of Shadows; chalk blueprint and a patrolling guard on the map; fixed giant sparkles around tall held objects.
+
 ## State
 
-- `npm test`: 64/64 pass. `npm run build`: OK. Dev server: port 5214.
-- Measured 60 fps (headless GPU, 720p/1080p). Bundle: JS 875 KB (234 KB gz), models 5.9 MB.
+- `npm test`: 65/65 pass. `npm run build`: OK. Dev server: port 5214.
+- Measured 60 fps (headless GPU, 720p/1080p). Bundle: JS 914 KB (247 KB gz), models 5.9 MB.
 
 ## TODO / ideas
 
 - More set dressing per hall (display cases, armour, vases) to reach the mockups' density.
-- A darker, moodier Hall of Shadows.
 - Real-device check (phone/tablet), a classroom test with students.
 - Optional: code-split three.js examples to shrink the first load.

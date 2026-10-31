@@ -1,5 +1,7 @@
 # Visual review — mockups vs the real game
 
+> **Update 2026-10-31 ("even better" pass):** the level-select table is now a chalk blueprint of the heist (lens rule, similar triangles, the length/area/volume ratios) with a tiny guard patrolling the rooftop diorama (`00-menu.jpg`); the Hall of Shadows has museum uplight washes so its walls read in the dark (`levels-*-aim.jpg`, levels 6–10); the guard and raccoon speak in speech bubbles (`03b-guard-chase.jpg`); the results screen shows your worked solution and personal best (`05c-results.jpg`).
+
 > **Update 2026-10-31 (AAA pass):** the halls now have per-hall inlaid marble floors (herringbone parquet in the Hall of Shadows), fluted marble pilasters, chandeliers, walnut-panelled mezzanines, glass display cases, a spotlight on every target, drifting dust, soft window shafts, a cinematic grade, and the first-person view is a brass lens in a black glove (as in the mockups). New screens: the letterbox level intro (`05-intro-cinematic.jpg`), hall briefing with the difficulty tier (`05b-hall-briefing.jpg`) and the results screen (`05c-results.jpg`). Every level's aim view is in `levels-01-09-aim.jpg` and `levels-10-18-aim.jpg`. The notes below were written before this pass; where they say the scenes are plainer than the mockups or that the lens reads as a camera, that is no longer the case.
 
 Targets: `docs/visual-targets/01–04` (ChatGPT image generation, design targets only; see `PROMPTS.md`).

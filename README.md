@@ -9,10 +9,11 @@ Hebrew RTL UI, Three.js, 18 authored levels in 5 halls, plus generated "surprise
 ```bash
 npm install
 npm run dev        # http://localhost:5214  (strict port)
-npm test           # 64 unit tests: rules, all 18 levels solvable through the sim, misconception traps
+npm test           # 65 unit tests: rules, all 18 levels solvable through the sim, misconception traps
 npm run build      # static build in dist/ (relative base, works offline)
 npm run preview    # http://localhost:4214
 npm run capture    # needs the dev server: plays scenarios in headless Chromium, saves screenshots
+node tests/audio-check.mjs   # needs the dev server: measures each hall's music/ambience level, chase layer, heartbeat
 ```
 
 URL options: `?level=N` jumps into a level, `?unlock=all` unlocks the whole map (for teachers/testing).
@@ -32,14 +33,16 @@ The lens HUD shows the locked grab distance **d₁** and the live rangefinder di
 
 ## What's implemented
 
-- **18 authored levels** (`src/levels.ts`): Gallery of Lengths (1–5), Hall of Shadows (6–10, real shadow-casting light, AA similar triangles), Canvas & Carpet (11–15, perimeter k vs area k²), The Vault (16–17, k³ extension and congruence k = 1), and the no-hints rooftop finale at dawn (18) with a patrolling guard who only moves while you move. Each world ends in a transfer level. See `LEVELS.md` for every level's numbers and solution, and `CURRICULUM.md` for the Workbook module links.
+- **18 authored levels** (`src/levels.ts`; levels 9, 11, 15 and 16 re-authored from the handoff so that no fixed "drop at N × grab" wins more than 4 of 21 targets): Gallery of Lengths (1–5), Hall of Shadows (6–10, real shadow-casting light, AA similar triangles), Canvas & Carpet (11–15, perimeter k vs area k²), The Vault (16–17, k³ extension and congruence k = 1), and the no-hints rooftop finale at dawn (18) with a patrolling guard who only moves while you move. Each world ends in a transfer level. See `LEVELS.md` for every level's numbers and solution, and `CURRICULUM.md` for the Workbook module links.
 - **Pure math** in `src/rules.ts` (ratio, k windows for powers 1/2/3, drop verdicts, worked explanations, stars) and a **headless sim** in `src/sim.ts` (movement, aiming, grab/drop, consequences, guard, stealth). The Three.js scene only renders the sim.
 - **Consequences:** crash and roof-crash (alarm, guard chase, hide in a sarcophagus or get caught), fall-through, blown away by the vent fan, pocketed by the guard, too short, gap left, jam (wrong corresponding sides), not similar. Every mistake is recoverable and is followed by a worked-ratio card that reveals more on each repeated miss (ratio used → ratio kind → needed k). A drop anywhere but a target sends the exhibit back to its pedestal.
 - **Tripo 3D models** (`public/models/`, see `ASSETS.md`): rigged night guard (walk/run/look-around/scratch-head/fall), rigged raccoon accomplice (idle/greet/cheer), lens-in-glove view model, dinosaur crate, bust, statue, upright sarcophagus. Everything that carries a number is procedural and exact.
 - **Progression:** five halls, each a new subject at a higher tier — Gallery of Lengths (מתחילים), Hall of Shadows (בינוני), Canvas & Carpet (מתקדם), The Vault (מומחה · הרחבה), Rooftop finale (אתגר סופי). Levels unlock in order; a hall briefing introduces each new subject; any finished level can be replayed from the map for more stars; clearing a hall opens its **★ challenge rooms** (fresh solver-checked numbers every time).
-- **Presentation:** cinematic level intro (letterbox fly-in with hall, tier and objective; any key skips), results screen (stars, drop accuracy, time, badges, what you practised, what unlocked), success stamp with the k you used, slow-mo, gold shockwave, roof-crash camera tilt, per-hall music.
-- **Art:** per-hall inlaid marble floors / herringbone parquet, fluted pilasters, chandeliers, walnut-panelled mezzanines, glass display cases, a spotlight on every target, drifting dust, cinematic colour grade; a lit dawn skyline with string lights on the rooftop.
-- **3D level select** (a museum diorama on a planning table, right-to-left), stars and progress saved in `localStorage`, hints, pause (mouse sensitivity, reduced motion, mute), touch controls, Hebrew Rubik font bundled.
+- **Presentation:** cinematic level intro (letterbox fly-in with hall, tier and objective; any key skips), results screen (stars, drop accuracy, time and personal best, badges, **your worked solution** — ratio → k → d₂ — for every fit, what you practised, what unlocked, rank-ups), success stamp with the k you used, slow-mo, gold shockwave, roof-crash camera tilt. The guard and the raccoon talk in speech bubbles ("עצור! גנב!", "לאן נעלמת…?"); a player stuck for 40 s gets a free raccoon nudge that points at the placards/plates or restates d₂ = k × d₁ (never the answer).
+- **Sound:** all synthesized (no files): a lookahead music sequencer with a chord pad, pizzicato bass, brushed drums and a bell motif per hall, a generated hall reverb, a faster chase layer during the alarm, a heartbeat that quickens as the guard nears, and ambience per hall (room air, vault hum, rooftop wind).
+- **Progression extras:** thief ranks by total stars (כייס מתחיל → אגדת המוזיאון), personal-best time per level.
+- **Art:** per-hall inlaid marble floors / herringbone parquet, fluted pilasters, chandeliers, walnut-panelled mezzanines, glass display cases, a spotlight on every target, museum uplight washes in the Hall of Shadows, drifting dust, cinematic colour grade; a lit dawn skyline with string lights on the rooftop.
+- **3D level select** (a museum diorama on a chalk blueprint of the heist, right-to-left, a tiny guard patrolling the rooftop), stars and progress saved in `localStorage`, hints, pause (mouse sensitivity, reduced motion, mute), touch controls, Hebrew Rubik font bundled.
 - **Challenge rooms:** built from each hall's templates (two per hall) with new numbers, verified by the solver: solvable through the sim, and the constant "drop at 2× grab" strategy fails (tested on 100 seeds).
 - **Learning log:** anonymous local events (level, d₁, d₂, k, needed k, outcome, hint used, attempt, first unaided decision) in `localStorage` (`perspective-thief:learn`); `window.learning_log()` returns them.
 - **Test hooks:** `window.render_game_to_text()` (full state as JSON) and `window.advanceTime(ms)` (deterministic steps, respects pause).
@@ -52,7 +55,7 @@ The lens HUD shows the locked grab distance **d₁** and the live rangefinder di
 
 ## Measured
 
-- Production build: JS 875 KB (234 KB gzip), CSS 19 KB, models 5.9 MB total (`dist/` 7.2 MB). No runtime network requests beyond the static files.
+- Production build: JS 914 KB (247 KB gzip), CSS 19 KB, models 5.9 MB total (`dist/` 7.2 MB). No runtime network requests beyond the static files.
 - Frame rate (`node tests/perf.mjs`, headless Chromium on this Mac's GPU): 60 fps at 1280×720 and 1920×1080 on levels 1, 6, 12 and 18. Not measured on phones.
 
 ## Deploy to Vercel (when you want to)
