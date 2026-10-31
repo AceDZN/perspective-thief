@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { LEVELS, WORLDS } from './levels.ts';
 import { Character, modelInstance } from './models.ts';
-import { glowSprite, marbleTexture, paintingTexture, woodTexture } from './textures.ts';
+import { blueprintTexture, glowSprite, marbleTexture, paintingTexture, woodTexture } from './textures.ts';
 import { boxAt, buildExhibitMesh, M } from './world.ts';
 
 export interface MenuView {
@@ -38,7 +38,7 @@ export function buildMenu(): MenuView {
   table.receiveShadow = true;
   scene.add(table);
   // Blueprint sheet.
-  const sheet = new THREE.Mesh(new THREE.PlaneGeometry(22, 14), new THREE.MeshStandardMaterial({ color: '#2a3b5c', roughness: 0.9 }));
+  const sheet = new THREE.Mesh(new THREE.PlaneGeometry(22, 14), new THREE.MeshStandardMaterial({ map: blueprintTexture(), roughness: 0.85 }));
   sheet.rotation.x = -Math.PI / 2;
   sheet.position.set(0.5, 0.005, -0.7);
   sheet.receiveShadow = true;
@@ -131,6 +131,23 @@ export function buildMenu(): MenuView {
     scene.add(coin);
   }
 
+  // A tiny night guard patrols the rooftop, flashlight on.
+  const guard = new Character('guard', 0.75);
+  scene.add(guard.root);
+  guard.play(['walk']);
+  const beam = new THREE.Mesh(
+    new THREE.ConeGeometry(0.55, 1.6, 24, 1, true),
+    new THREE.MeshBasicMaterial({ color: '#ffe9b0', transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+  );
+  beam.geometry.translate(0, -0.8, 0);
+  beam.rotation.x = -Math.PI / 2 - 0.35;
+  beam.position.set(0, 0.45, 0.1);
+  guard.root.add(beam);
+  const torch = new THREE.SpotLight('#ffe2a0', 6, 4, 0.5, 0.6, 1.5);
+  torch.position.set(0, 0.5, 0.1);
+  torch.target.position.set(0, 0, 1.6);
+  guard.root.add(torch, torch.target);
+
   const raccoon = new Character('raccoon', 0.8);
   scene.add(raccoon.root);
   raccoon.play(['idle', 'wave', 'cheer']);
@@ -173,6 +190,12 @@ export function buildMenu(): MenuView {
         raccoon.root.rotation.y = 0.4;
       }
       raccoon.update(dt, false);
+      // Elliptical patrol around node 18, clear of the tower and planters.
+      const ang = reduced ? 1.2 : t * 0.22;
+      const gx = 1.5 + Math.cos(ang) * 3.0, gz = -4.05 + Math.sin(ang) * 1.4;
+      guard.root.position.set(gx, 0.3, gz);
+      guard.root.rotation.y = Math.atan2(-Math.sin(ang) * 3.0, Math.cos(ang) * 1.4);
+      guard.update(reduced ? 0 : dt, true);
     },
   };
 }

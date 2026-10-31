@@ -597,6 +597,72 @@ export function wallWashTexture(): THREE.CanvasTexture {
   });
 }
 
+/**
+ * The heist blueprint under the level-select diorama (22 × 14 m sheet). Chalk diagrams sit in the
+ * margins the halls don't cover: the lens rule (top right), similar triangles (top left), the
+ * formula and title (bottom strip).
+ */
+export function blueprintTexture(): THREE.CanvasTexture {
+  return cached('blueprint', () => {
+    const W = 2048, H = 1304;
+    const [c, g] = canvas(W, H);
+    const bg = g.createRadialGradient(W / 2, H / 2, 100, W / 2, H / 2, W * 0.7);
+    bg.addColorStop(0, '#24426e');
+    bg.addColorStop(1, '#16294a');
+    g.fillStyle = bg;
+    g.fillRect(0, 0, W, H);
+    // Grid: fine every 0.25 m, bold every metre.
+    const m = W / 22;
+    for (let x = 0; x <= W; x += m / 4) { g.strokeStyle = Math.round(x / m * 4) % 4 ? 'rgba(160,200,255,0.10)' : 'rgba(170,210,255,0.26)'; g.lineWidth = Math.round(x / m * 4) % 4 ? 1 : 2; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+    for (let y = 0; y <= H; y += m / 4) { g.strokeStyle = Math.round(y / m * 4) % 4 ? 'rgba(160,200,255,0.10)' : 'rgba(170,210,255,0.26)'; g.lineWidth = Math.round(y / m * 4) % 4 ? 1 : 2; g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+    const chalk = 'rgba(235,245,255,0.85)';
+    const gold = 'rgba(255,214,120,0.9)';
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+    const line = (pts: number[][], col = chalk, w = 5, dash: number[] = []) => {
+      g.strokeStyle = col; g.lineWidth = w; g.setLineDash(dash); g.beginPath();
+      pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+      g.stroke(); g.setLineDash([]);
+    };
+    const text = (t: string, x: number, y: number, size: number, col = chalk, align: CanvasTextAlign = 'center', rtl = false) => {
+      g.fillStyle = col; g.font = `700 ${size}px Rubik, sans-serif`; g.textAlign = align; g.textBaseline = 'middle';
+      g.direction = rtl ? 'rtl' : 'ltr'; g.fillText(t, x, y); g.direction = 'ltr';
+    };
+    // Top left: two similar right triangles (a mannequin and a statue with their shadows).
+    const ox = 90, oy = 470;
+    line([[ox, oy], [ox + 150, oy], [ox, oy - 120], [ox, oy]]);
+    line([[ox + 260, oy], [ox + 260 + 375, oy], [ox + 260, oy - 300], [ox + 260, oy]]);
+    line([[ox + 18, oy], [ox + 18, oy - 18], [ox, oy - 18]], chalk, 3);
+    line([[ox + 278, oy], [ox + 278, oy - 18], [ox + 260, oy - 18]], chalk, 3);
+    text('1.6', ox - 34, oy - 60, 30);
+    text('2', ox + 75, oy + 30, 30);
+    text('h', ox + 236, oy - 150, 38, gold);
+    text('9', ox + 450, oy + 30, 30);
+    text('1.6 / 2 = h / 9', ox + 330, oy - 380, 40, gold);
+    text('∼', ox + 205, oy - 60, 54, gold);
+    // Top right: the lens rule — an eye, the same angle, two distances.
+    const ex = 1570, ey = 330;
+    g.fillStyle = chalk; g.beginPath(); g.arc(ex, ey, 14, 0, Math.PI * 2); g.fill();
+    line([[ex, ey], [ex + 420, ey - 150]], chalk, 3, [14, 10]);
+    line([[ex, ey], [ex + 420, ey + 150]], chalk, 3, [14, 10]);
+    line([[ex + 140, ey - 50], [ex + 140, ey + 50]], gold, 8);
+    line([[ex + 400, ey - 143], [ex + 400, ey + 143]], gold, 12);
+    line([[ex, ey + 210], [ex + 140, ey + 210]], chalk, 3);
+    line([[ex, ey + 250], [ex + 400, ey + 250]], chalk, 3);
+    text('d₁', ex + 70, ey + 185, 32);
+    text('d₂', ex + 200, ey + 225, 32);
+    text('k = d₂ / d₁', ex + 220, ey - 230, 50, gold);
+    // Bottom strip: title and the three ratios.
+    text('תוכנית השוד · מוזיאון הפרופורציות', W - 120, H - 70, 44, chalk, 'right', true);
+    text('אורך × k', 1000, H - 70, 40, gold, 'center', true);
+    text('שטח × k²', 760, H - 70, 40, gold, 'center', true);
+    text('נפח × k³', 520, H - 70, 40, gold, 'center', true);
+    // A coffee ring, for character.
+    g.strokeStyle = 'rgba(120,80,40,0.35)'; g.lineWidth = 10; g.beginPath(); g.arc(1290, H - 64, 46, 0.3, Math.PI * 1.8); g.stroke();
+    return tex(c);
+  });
+}
+
 export function skyTexture(theme: string): THREE.CanvasTexture {
   return cached('sky-' + theme, () => {
     const [c, g] = canvas(512, 256);
