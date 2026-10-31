@@ -620,6 +620,7 @@ function openMenu(): void {
   clearLevel();
   level = null;
   audio.theme = 'menu';
+  audio.setDanger(0);
   mode = 'menu';
   hud.hidden = true;
   menuEl.hidden = false;
@@ -1049,6 +1050,10 @@ function syncView(dt: number, realtime: boolean): void {
 
   // Guard.
   const G = sim.guard;
+  if (realtime) {
+    const gd = Math.hypot(G.pos[0] - sim.player.x, G.pos[1] - sim.player.z);
+    audio.setDanger(G.mode === 'off' || G.mode === 'leave' ? 0 : 1 - gd / 7);
+  }
   const gr = view.guard;
   const showGuard = G.mode !== 'off' || (phase === 'consequence' && consequenceFx === 'pocketed');
   gr.root.visible = showGuard;
@@ -1331,7 +1336,7 @@ window.advanceTime = (ms: number) => {
   composer.render(steps * STEP);
 };
 window.learning_log = () => [...learnBuffer, ...(sim?.log ?? [])];
-window.__pt = { startLevel, openMenu, get sim() { return sim; }, hideCard, resume };
+window.__pt = { startLevel, openMenu, get sim() { return sim; }, hideCard, resume, audio };
 
 // ─────────────── boot ───────────────
 async function boot(): Promise<void> {
