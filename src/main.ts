@@ -21,6 +21,7 @@ import { Controls } from './input.ts';
 import { bidi, glowSprite } from './textures.ts';
 import { buildMenu, type MenuView } from './menu.ts';
 import { generateLevel } from './generator.ts';
+import { initHost, postToHost } from './host.ts';
 
 // ─────────────── DOM ───────────────
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -447,6 +448,7 @@ function showWin(): void {
   if (next) { if (next.id > save.current) save.current = next.id; selected = next.id; }
   persist();
   flushLearn(sim);
+  if (!isGen) postToHost({ type: 'level-complete', level: level.id, stars, durationMs: Math.round(sim.time * 1000) });
   const s = sim.stats;
   const acc = sim.fits.length ? sim.fits.reduce((a, f) => a + f.accuracy, 0) / sim.fits.length : 1;
   const secs = secsRun;
@@ -570,6 +572,7 @@ function enterLevel(l: Level): void {
   selected = l.id > 0 ? l.id : selected;
   sim = new Sim(l);
   sim.revealedBefore = l.id > 0 && !!save.revealed[l.id];
+  if (l.id > 0) hostLevelStart(l.id);
   audio.theme = l.room.theme;
   view = buildLevel(l);
   scene.add(view.root);
@@ -1412,6 +1415,13 @@ function frame(now: number): void {
   grade.uniforms.time.value = (now % 10000) / 1000;
   grade.uniforms.grain.value = reduced ? 0 : 0.035;
   composer.render(dt);
+  if (booted && !hostReady) {
+    // The workbook player waits for this: models are loaded and a real frame is on screen.
+    hostReady = true;
+    postToHost({ type: 'ready' });
+    if (pendingStart !== null) postToHost({ type: 'level-start', level: pendingStart });
+    pendingStart = null;
+  }
   requestAnimationFrame(frame);
 }
 
@@ -1444,7 +1454,17 @@ window.learning_log = () => [...learnBuffer, ...(sim?.log ?? [])];
 window.__pt = { startLevel, openMenu, get sim() { return sim; }, hideCard, resume, audio };
 
 // ─────────────── boot ───────────────
+// Workbook games host bridge (silent when the game runs on its own).
+let booted = false;
+let hostReady = false;
+let pendingStart: number | null = null;
+function hostLevelStart(n: number): void {
+  if (hostReady) postToHost({ type: 'level-start', level: n });
+  else pendingStart = n;
+}
+
 async function boot(): Promise<void> {
+  initHost('perspective-thief');
   resize();
   await document.fonts.load('700 40px Rubik').catch(() => undefined);
   await document.fonts.load('500 40px Rubik').catch(() => undefined);
@@ -1455,6 +1475,7 @@ async function boot(): Promise<void> {
   const start = params.get('level');
   if (start && LEVELS.some((l) => l.id === Number(start))) startLevel(Number(start));
   else openMenu();
+  booted = true;
   requestAnimationFrame(frame);
 }
 void boot();
