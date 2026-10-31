@@ -58,6 +58,10 @@ The lens HUD shows the locked grab distance **d₁** and the live rangefinder di
 - Production build: JS 914 KB (247 KB gzip), CSS 19 KB, models 5.9 MB total (`dist/` 7.2 MB). No runtime network requests beyond the static files.
 - Frame rate (`node tests/perf.mjs`, headless Chromium on this Mac's GPU): 60 fps at 1280×720 and 1920×1080 on levels 1, 6, 12 and 18. Not measured on phones.
 
+## Workbook Math Games
+
+Released on the workbook games host (math-games.workbook.co.il) from R2 `games/perspective-thief/2026-10-31/` (commit `781a585`), through `pnpm games:release` in acedzn-tools. `src/host.ts` is the shared bridge: inside the workbook player it posts `ready` (after the first real frame), `level-start` and `level-complete` (stars, play time); standalone it posts nothing. `?level=N` opens any level. `workbook/poster.jpg` is the catalog poster (`node tests/poster-capture.mjs` makes candidates); `tests/workbook-player-check.mjs` plays the game inside a local math-games app.
+
 ## Deploy to Vercel (when you want to)
 
 Static site, no server. In Vercel: **New Project → import `AceDZN/perspective-thief` → Framework preset "Vite"** (build `npm run build`, output `dist`). The relative `base: './'` also lets it live under a sub-path (e.g. inside math-games.workbook.co.il) or in an iframe; the canvas fills whatever container it is given. Not deployed yet.
