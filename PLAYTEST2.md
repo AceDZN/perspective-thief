@@ -161,3 +161,31 @@ L1, 9, 11, 12, 15 and 16 (round-1 B2) are unchanged and acknowledged. The consta
 ## What automation cannot tell you
 
 A robot pressing keys and reading screenshots **can't measure fun, frustration, or whether a 13-year-old learns similarity from this**. It can't tell whether the slapstick lands, whether kids read the plates, or whether they will actually find the restart bypass. Audio was not checked. Nothing ran on a real phone or with a real mouse and pointer lock. The next step is a handful of grade-8 players, watched without help, with a before/after item on k vs k² vs k³.
+
+## Lead's response — fixes after round 2 (2026-10-31)
+
+Re-verified afterwards: `npm test` 64/64 (new: chase head-start ≥ 1.5 s on every level, challenge rooms on 100 seeds); all 18 levels played start to finish again through keyboard events in headless Chromium (`npm run capture` → `solveAll` + `finale`, 3★ each); fresh captures in `docs/captures/` (including `levels-01-09-aim.jpg`, `levels-10-18-aim.jpg`).
+
+| # | Finding | Status |
+|---|---|---|
+| 1 | Level 18 no shadows | **Fixed — root cause was global:** the sun's shadow camera frustum was set but `updateProjectionMatrix()` was never called, so every level only had shadows within ±5 m of the room centre. Rooftop lighting rebalanced (low hemisphere fill, stronger sun, darker terracotta floor); the obelisk and tower shadows now lie on their rulers. |
+| 2 | Miss ×3, read k, restart → 3★ + badge | **Fixed.** Once a card has shown the needed k on a level, that level is capped at 2★ in every later run (persisted), with no first-try badge and a note on the results card. |
+| 3 | Hide spot too close to the guard door (L3, L7, L4…) | **Fixed.** Doors/hides moved on levels 1, 3, 4, 6, 7, 10, 15; a test now requires ≥ 1.5 s head start from every drop spot. |
+| 4 | L18 guard teleports to the door on an alarm | **Fixed** (a patrolling guard chases from where he is). |
+| 5 | L18 guard T-pose while frozen | **Fixed** (he idles in place). |
+| 6 | Replaying moves "Continue" backwards | **Fixed** (only advances). |
+| 7 | Locked toast invisible on the map; locked nodes look open | **Fixed** (toast lives outside the HUD; locked nodes greyed). |
+| 8 | Math in "תרגלתם" flips | **Fixed** (math in the skill lines is LTR-isolated). |
+| 9 | Vision cone unreadable / 1.4 m radius not drawn | **Fixed** (brighter fan, bright edge arc, and the 1.4 m "too close" ring). |
+| 10 | Plates blown out by target spotlights | **Fixed** (softer spots, matte plates). |
+| 11 | L8 side labels unreadable | **Fixed** (big brass number tags on the sign and frame). |
+| 12 | L15 frame tiny | **Improved** (frame at eye height, bigger aim zone); its size stays 24 cm because the handoff's cm² numbers require it. |
+| 13 | L17 vault glare, key/keyhole invisible | **Fixed** (darker steel, a dark round escutcheon behind the keyhole). |
+| 14 | Mobile chip over the act button; keyboard text on touch | **Fixed.** |
+| 15 | 99.8 % + sniper badge after misses; "1 הנחות" | **Fixed** ("accuracy of the successful drop", badge only with no misses, singular text). |
+| 16 | Challenge-room wording and names | **Fixed** ("חיישן גובה", neighbouring busts match the asked height, one name: "★ חדר אתגר"). |
+| 17 | Roof hole persists | **Fixed** (cleared when the chase ends). |
+| 18 | L7 mirror black | **Fixed** (bright mirror). L10 pole / L14 planter filling the view is the forced perspective itself; kept. |
+| 19 | Hard-edged window shafts | **Fixed** (soft gradient shafts). Crash geometry passing through remains. |
+| 20 | Finale gives k on the 3rd miss; "k עצמו"; exit toast over results | **Fixed** (finale card stops at the ratio kind; "כל אורך גדל פי k"; toast suppressed under cards). |
+| 21 | ×3 constant on six levels | **Not changed** (handoff's authored k). |

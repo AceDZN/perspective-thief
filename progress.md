@@ -13,9 +13,12 @@ Original prompt: build Perspective Thief (גנב הפרספקטיבה), a real-3
 7. **Visual review** against the mockups with real captures: `docs/VISUAL_REVIEW.md`, `docs/captures/`. Fixed: overexposure, ruler orientation, vent hidden behind the wainscot, exit arch over the vent, held object hiding the target (now held lower right), menu RTL order, mobile HUD overlap, pause on failed pointer lock, hide camera inside the sarcophagus, guard searching nose-to-nose, keyboard turn speed.
 8. **Independent playtest** (`PLAYTEST.md`): found 5 bypasses, 6 bugs, clarity items. Fixed: progressive worked-ratio card (no answer on the 1st miss), floor drops return to the pedestal, caught costs a star + hide arrow, guard sees while you stand still, touch climb button, visible roof hole + camera tilt, mobile map fit, toast leak, map selection after a win, Hebrew wording, L12 rename, L3 range wording, larger L8 labels. Not changed: ×3 constant wins 6 single-target levels (handoff's authored k values). Re-verified all 18 levels in the browser afterwards.
 
+9. **AAA pass (user request: "make it look awesome… test each and every level… until it's perfect")**: audited all 18 levels from contact sheets; new room art (floors, pilasters, chandeliers, panels, cases, target spotlights, dust, grade), deep chasm, gloved brass lens, rooftop city/sun/string lights; cinematic intro, hall briefings with difficulty tiers, results screen with accuracy and badges, challenge rooms on the map (two templates per hall), success stamp, slow-mo, shockwave, per-hall music, sensitivity setting. Fixed z-fighting, and a global bug where sun shadows only existed within 5 m of each room's centre.
+10. **Round-2 playtest** (`PLAYTEST2.md`): every level played with three wrong drops each; 21 findings; all but the ×3-constant one fixed (see the response table). Re-verified all 18 levels in the browser.
+
 ## State
 
-- `npm test`: 59/59 pass. `npm run build`: OK. Dev server: port 5214.
+- `npm test`: 64/64 pass. `npm run build`: OK. Dev server: port 5214.
 - Measured 60 fps (headless GPU, 720p/1080p). Bundle: JS 875 KB (234 KB gz), models 5.9 MB.
 
 ## TODO / ideas

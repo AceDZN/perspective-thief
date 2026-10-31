@@ -9,7 +9,7 @@ Hebrew RTL UI, Three.js, 18 authored levels in 5 halls, plus generated "surprise
 ```bash
 npm install
 npm run dev        # http://localhost:5214  (strict port)
-npm test           # 63 unit tests: rules, all 18 levels solvable through the sim, misconception traps
+npm test           # 64 unit tests: rules, all 18 levels solvable through the sim, misconception traps
 npm run build      # static build in dist/ (relative base, works offline)
 npm run preview    # http://localhost:4214
 npm run capture    # needs the dev server: plays scenarios in headless Chromium, saves screenshots

@@ -45,7 +45,7 @@ export const M = {
   lightWood: () => mat('lightWood', () => new THREE.MeshStandardMaterial({ map: woodTexture(false), roughness: 0.65 })),
   crate: () => mat('crate', () => new THREE.MeshStandardMaterial({ map: crateTexture(), roughness: 0.8 })),
   velvet: () => mat('velvet', () => new THREE.MeshStandardMaterial({ map: velvetTexture(), roughness: 0.95 })),
-  steel: () => mat('steel', () => new THREE.MeshStandardMaterial({ color: '#7f9aa0', roughness: 0.35, metalness: 0.9 })),
+  steel: () => mat('steel', () => new THREE.MeshStandardMaterial({ color: '#5c7076', roughness: 0.55, metalness: 0.85 })),
   dark: () => mat('dark', () => new THREE.MeshStandardMaterial({ color: '#0b0b10', roughness: 0.9 })),
   void: () => mat('void', () => new THREE.MeshBasicMaterial({ color: '#020205' })),
   laser: () => mat('laser', () => new THREE.MeshBasicMaterial({ color: '#ff2a2a', transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })),

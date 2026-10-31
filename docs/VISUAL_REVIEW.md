@@ -1,5 +1,7 @@
 # Visual review — mockups vs the real game
 
+> **Update 2026-10-31 (AAA pass):** the halls now have per-hall inlaid marble floors (herringbone parquet in the Hall of Shadows), fluted marble pilasters, chandeliers, walnut-panelled mezzanines, glass display cases, a spotlight on every target, drifting dust, soft window shafts, a cinematic grade, and the first-person view is a brass lens in a black glove (as in the mockups). New screens: the letterbox level intro (`05-intro-cinematic.jpg`), hall briefing with the difficulty tier (`05b-hall-briefing.jpg`) and the results screen (`05c-results.jpg`). Every level's aim view is in `levels-01-09-aim.jpg` and `levels-10-18-aim.jpg`. The notes below were written before this pass; where they say the scenes are plainer than the mockups or that the lens reads as a camera, that is no longer the case.
+
 Targets: `docs/visual-targets/01–04` (ChatGPT image generation, design targets only; see `PROMPTS.md`).
 Actual: `docs/captures/*.jpg`, captured 2026-10-31 by `tests/browser-capture.mjs` in headless Chromium (Metal/ANGLE GPU), 1280 × 720 (the mockups' 16:9), playing through **keyboard events only** (`tests/autopilot.js`) plus the deterministic `advanceTime` hook. Nothing was posed by setting game state. Run `npm run capture` with the dev server up to regenerate (writes `test-output/captures/`).
 
