@@ -269,8 +269,8 @@ test('levels 6, 7, 10: mismatched sides in the triangle step fail', () => {
 test('level 9: matching the ramp base to the balcony height (k = 0.75) fails; too long a ramp crashes', () => {
   const s = plan(L(9))[0];
   loses(dropAt(L(9), 0, 0.75 * s.d1), 'level 9 k = 0.75');
-  const long = dropAt(L(9), 0, 3.5 * s.d1);
-  loses(long, 'level 9 k = 3.5');
+  const long = dropAt(L(9), 0, 4 * s.d1);
+  loses(long, 'level 9 k = 4');
   assert.equal(long.kind, 'crash');
 });
 
@@ -286,8 +286,8 @@ test('level 15: the 10 × 5 rectangle never fits the house-pentagon frame, for a
   assert.ok(Math.abs(shoelace(penta.shape.pts) * 1e4 - 50) < 1e-9);
   assert.ok(Math.abs(shoelace(rect.shape.pts) * 1e4 - 50) < 1e-9);
   assert.ok(Math.abs((penta.shape.pts[2][1] - penta.shape.pts[1][1]) * 100 - 4) < 1e-9);
-  const big = penta.shape.pts.map(([x, y]) => [x * 3, y * 3] as V2);
-  assert.ok(Math.abs(shoelace(big) * 1e4 - 450) < 1e-9, '× 3 → 450 cm²');
+  const big = penta.shape.pts.map(([x, y]) => [x * 4, y * 4] as V2);
+  assert.ok(Math.abs(shoelace(big) * 1e4 - 800) < 1e-9, '× 4 → 800 cm²');
   assert.ok(similarPolygons(penta.shape.pts, big));
   assert.ok(!similarPolygons(penta.shape.pts, rect.shape.pts));
   let tried = 0;
@@ -340,9 +340,9 @@ test('eyeballing, physical slack: level 3 (±4.8 % window) rejects ±5 % and ±1
 
 // ───────────── constant strategies ─────────────
 
-const CONSTANTS = [1, 1.5, 2, 2.5, 3, 4];
+const CONSTANTS = [1, 1.5, 2, 2.5, 3, 3.5, 4];
 
-test('constant strategies: dropping at a fixed multiple of the grab distance wins only a minority of targets', () => {
+test('constant strategies: dropping at a fixed multiple of the grab distance wins at most 4 of 21 targets', () => {
   const total = ALL.length;
   assert.equal(total, 21);
   const table: Record<string, string[]> = {};
@@ -354,20 +354,21 @@ test('constant strategies: dropping at a fixed multiple of the grab distance win
       if (o.solved) won.push(key);
     }
     table[c] = won;
-    assert.ok(won.length / total < 0.4, `k = ${c} wins ${won.length}/${total}: ${won.join(', ')}`);
+    assert.ok(won.length <= 4, `k = ${c} wins ${won.length}/${total}: ${won.join(', ')}`);
   }
   // The exact winners (so a change that makes a constant stronger is noticed).
   assert.deepEqual(table, {
     1: [],
     1.5: ['4:plinth'],
-    2: ['8:frame', '13:plate', '14:loop'],
+    2: ['8:frame', '13:plate', '14:loop', '16:elevator'],
     2.5: ['3:gap', '18:loop'],
-    3: ['1:niche', '9:balcony', '11:loop', '12:window', '15:frame', '16:elevator', '18:billboard'],
-    4: ['5:door', '6:crown', '14:plate'],
+    3: ['1:niche', '12:window', '18:billboard'],
+    3.5: ['9:balcony', '11:loop'],
+    4: ['5:door', '6:crown', '14:plate', '15:frame'],
   });
 });
 
-test('constant strategies: no fixed multiple wins more than a third of the levels; none wins a multi-target level', () => {
+test('constant strategies: no fixed multiple wins more than three levels; none wins a multi-target level', () => {
   for (const c of CONSTANTS) {
     const levelsWon: number[] = [];
     for (const level of LEVELS) {
@@ -383,8 +384,8 @@ test('constant strategies: no fixed multiple wins more than a third of the level
       }
       if (all) levelsWon.push(level.id);
     }
-    assert.ok(levelsWon.length <= 6, `k = ${c} wins levels ${levelsWon.join(', ')}`);
+    assert.ok(levelsWon.length <= 3, `k = ${c} wins levels ${levelsWon.join(', ')}`);
     for (const id of levelsWon) assert.equal(plan(L(id)).length, 1, `k = ${c} wins multi-target level ${id}`);
-    if (c === 2) assert.deepEqual(levelsWon, [8, 13], '"drop at 2 × grab" wins only levels 8 and 13');
+    if (c === 3) assert.deepEqual(levelsWon, [1, 12], '"drop at 3 × grab" wins only levels 1 and 12');
   }
 });

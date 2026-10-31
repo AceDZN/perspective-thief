@@ -69,11 +69,11 @@ All numbers come from `src/levels.ts` and the solver (`src/solver.ts` `plan()`);
 - **Wrong:** right k, not rotated or rotated once → `jam`; base-to-base 40 ↔ 60 (k = 1.5 → 2.25 m) → `fallThrough`; too big → `crash`.
 
 ### 9 · רמפה למרפסת
-- **Situation:** a 1.5 m balcony; the floor in front of it is 6.5 m long.
-- **Given:** "רמפה · בסיס 2 מ' · גובה 0.5 מ'"; "מרפסת · גובה 1.5 מ'"; sign "אורך האולם 6.5 מ'".
-- **Math:** height ↔ height: 1.5 ÷ 0.5 = 3 → base 6 m < 6.5 m, so it fits.
-- **Grab d₁ = 2 m → drop d₂ = 6 m**, window [5.88, 6.12] m. (Pad moved from 1.5 m to 2 m in review: with 1.5 m, d₁ + k = 4.5 = k · d₁, so the wrong additive rule won.)
-- **Wrong:** base ↔ balcony height (k = 0.75 → 1.5 m) → `tooShort`; k = 3.5 → `crash`.
+- **Situation:** a 1.75 m balcony (too high to climb: the limit is 1.6 m); the floor in front of it is 7.5 m long.
+- **Given:** "רמפה · בסיס 2 מ' · גובה 0.5 מ'"; "מרפסת · גובה 1.75 מ'"; sign "אורך האולם 7.5 מ'".
+- **Math:** height ↔ height: 1.75 ÷ 0.5 = 3.5 → base 7 m < 7.5 m, so it fits.
+- **Grab d₁ = 2 m → drop d₂ = 7 m**, window [6.86, 7.14] m. (Re-authored from the handoff's 1.5 m / k = 3 so that "always ×3" stops winning.)
+- **Wrong:** base ↔ balcony height (k = 0.875 → 1.75 m) → `tooShort`; k = 4 → `crash`.
 
 ### 10 · משולש בתוך משולש (transfer, hints name the comparison only)
 - **Situation:** a rope runs from the 6 m-high balcony edge down to the floor 8 m away; a vertical banner stands under it 2 m from the rope's foot, its top touching the rope. Reach the balcony railing with a climbing pole. No helper lines.
@@ -85,10 +85,10 @@ All numbers come from `src/levels.ts` and the solver (`src/solver.ts` `plan()`);
 ## World 3 — אולם הבד והשטיח
 
 ### 11 · גדר לייזר
-- **Given:** "בסיס ריבועי · צלע 1 מ'"; "לולאת לייזר · היקף 12 מ'" (a 3 × 3 m laser square).
-- **Math:** perimeter 4 → 12: יחס היקפים = k = 3.
-- **Grab d₁ = 2 m → drop d₂ = 6 m**, window [5.88, 6.12] m.
-- **Wrong:** k = √3 (perimeter like area) → `gapLeft`; side vs perimeter (k = 12, out of reach) or anything too far → `crash`.
+- **Given:** "בסיס ריבועי · צלע 1 מ'"; "לולאת לייזר · היקף 14 מ'" (a 3.5 × 3.5 m laser square).
+- **Math:** perimeter 4 → 14: יחס היקפים = k = 3.5. (Handoff had 12 / k = 3; changed to break the ×3 shortcut.)
+- **Grab d₁ = 2 m → drop d₂ = 7 m**, window [6.86, 7.14] m.
+- **Wrong:** k = √3.5 (perimeter like area) → `gapLeft`; side vs perimeter (k = 14, out of reach) or anything too far → `crash`.
 
 ### 12 · מכסים את חלון הירח
 - **Situation:** black out the moon window with a painting of the same shape.
@@ -111,18 +111,18 @@ All numbers come from `src/levels.ts` and the solver (`src/solver.ts` `plan()`);
 
 ### 15 · ויטראז׳ (transfer, hints name the comparison only)
 - **Situation:** fill a house-shaped (pentagon) stained-glass frame. Two glass pieces on the table.
-- **Given:** "זכוכית מחומשת · שטח 50 סמ"ר · צלע אנכית 4 ס"מ" (8 × 4 cm square body + 4.5 cm roof: 32 + 18 = 50 ✓); "זכוכית מלבנית · 10 × 5 ס"מ · שטח 50 סמ"ר"; "מסגרת ויטראז׳ · שטח 450 סמ"ר".
-- **Math:** only the pentagon is similar to the frame; 450 ÷ 50 = 9 = k² → k = 3; the 4 cm edge becomes 12 cm.
-- **Grab d₁ = 0.8 m → drop d₂ = 2.4 m**, window [2.352, 2.448] m.
-- **Wrong:** the rectangle at any k → `noFit` (tested for 14 values of k); pentagon at k = 9 (7.2 m) → `crash`; too small → `fallThrough`.
+- **Given:** "זכוכית מחומשת · שטח 50 סמ"ר · צלע אנכית 4 ס"מ" (8 × 4 cm square body + 4.5 cm roof: 32 + 18 = 50 ✓); "זכוכית מלבנית · 10 × 5 ס"מ · שטח 50 סמ"ר"; "מסגרת ויטראז׳ · שטח 800 סמ"ר".
+- **Math:** only the pentagon is similar to the frame; 800 ÷ 50 = 16 = k² → k = 4; the 4 cm edge becomes 16 cm (a 32 × 34 cm frame). Handoff had 450 / k = 3; changed to break the ×3 shortcut and to make the frame bigger.
+- **Grab d₁ = 0.8 m → drop d₂ = 3.2 m**, window [3.136, 3.264] m.
+- **Wrong:** the rectangle at any k → `noFit` (tested for 14 values of k); pentagon at k = 16 (12.8 m, out of reach; the farthest drop crashes) → `crash`; too small → `fallThrough`.
 
 ## World 4 — הכספת (extension)
 
 ### 16 · משקל המעלית (הרחבה)
-- **Given:** "קוביית זהב · מקצוע 20 ס"מ · משקל 2 ק"ג"; "מעלית · משקל נדרש 54 ק"ג". Tutorial: lengths × k → volume and weight × k³.
-- **Math:** 54 ÷ 2 = 27 = k³ → k = 3 (a 60 cm cube).
-- **Grab d₁ = 1.2 m → drop d₂ = 3.6 m**, window [3.528, 3.672] m.
-- **Wrong:** k = √27 (6.24 m) or 9 (10.8 m) → `crash`; k = 27 needs 32.4 m, beyond the 16 m lens range (the farthest real drop crashes; a 5.4 m cube would also exceed the 4 m ceiling); too small → `tooShort`.
+- **Given:** "קוביית זהב · מקצוע 20 ס"מ · משקל 2 ק"ג"; "מעלית · משקל נדרש 16 ק"ג". Tutorial: lengths × k → volume and weight × k³.
+- **Math:** 16 ÷ 2 = 8 = k³ → k = 2 (a 40 cm cube). Handoff had 54 kg / k = 3; changed to break the ×3 shortcut.
+- **Grab d₁ = 1.2 m → drop d₂ = 2.4 m**, window [2.352, 2.448] m.
+- **Wrong:** k = √8 (3.39 m), 4 (4.8 m) or 8 (9.6 m) → `crash`; too small → `tooShort`.
 
 ### 17 · מפתח חופף
 - **Situation:** the lock takes only a key congruent to the original; you enlarged the key × 2 earlier.
@@ -142,12 +142,10 @@ Three targets unlock in order.
 ## Bypass checks (from `tests/traps.test.ts`)
 
 - **Eyeballing:** ±5 % and ±10 % of the exact k fail on all 19 default-tolerance targets. Level 3 rejects ±5 % too; level 2's handoff slack (±0.05 m on 0.75 m) accepts ±5 %.
-- **Constant multiples of the grab distance** (21 targets): × 1 wins 0; × 1.5 wins 1 (4); × 2 wins 3 (8, 13, 14-loop); × 2.5 wins 2 (3, 18-loop); × 3 wins 7 (1, 9, 11, 12, 15, 16, 18-billboard); × 4 wins 3 (5, 6, 14-plate). No constant wins a multi-target level; "drop at 2 × grab" wins whole levels 8 and 13 only.
+- **Constant multiples of the grab distance** (21 targets): × 1 wins 0; × 1.5 wins 1 (4); × 2 wins 4 (8, 13, 14-loop, 16); × 2.5 wins 2 (3, 18-loop); × 3 wins 3 (1, 12, 18-billboard); × 3.5 wins 2 (9, 11); × 4 wins 4 (5, 6, 14-plate, 15). No constant wins more than 4 targets or 3 whole levels, and none wins a multi-target level.
 - **d₂ = d₁ + k** fails on all 21 targets (after the pad moves on 12, 13, 17 and 18-billboard).
 
 ## Known weak spots (for the lead)
 
-- **× 3 is over-represented:** "always drop at 3 × grab" clears 7 of 21 targets and whole levels 1, 9, 11, 12, 15, 16. Varying a few k values (e.g. loop 12 → 10 m in level 11, k = 2.5) would cut it.
+- ~~× 3 over-represented (7 of 21 targets, whole levels 1, 9, 11, 12, 15, 16)~~: **fixed** 2026-10-31 by re-authoring levels 9 (k 3.5), 11 (3.5), 15 (4) and 16 (2); `tests/traps.test.ts` now caps every constant at 4 targets and 3 levels.
 - ~~Additive coincidences on 12, 13, 18-billboard~~ and ~~level 17's subtraction bypass~~: **fixed** by the lead (pads 12 → 1.2 m, 13 → 1.5 m, 18 banner → 1.2 m, 17 → 3 m); `tests/traps.test.ts` now allows no coincidence at all.
-- **× 3 stays over-represented** on purpose: those k values are the handoff's authored numbers (levels 1, 9, 11, 12, 15, 16). The constant strategy still never wins a multi-target level, never the finale, and costs stars on every level it fails.
-- **Level 16's k = 27** cannot be played (32.4 m > 16 m lens range in a 12 m vault), so the handoff's "k = 27 → roof crash" can't happen in game; the player who believes 27 walks to the wall and gets an ordinary crash.

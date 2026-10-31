@@ -36,8 +36,10 @@ test('level 1 numbers: grab at 2 m, drop at 6 m (k = 3)', () => {
   assert.ok(Math.abs(s.d2 - 6) < 1e-9);
 });
 
-test('handoff drop distances', () => {
-  const want: Record<number, number[]> = { 1: [6], 2: [2], 4: [3.6], 5: [6], 6: [6], 7: [6], 8: [3], 10: [5], 11: [6], 12: [3.6], 13: [3], 14: [3, 6], 15: [2.4], 16: [3.6], 17: [1.5], 18: [6, 3.6, 5] };
+// Handoff numbers, except levels 9, 11, 15 and 16, re-authored (k 3.5, 3.5, 4, 2) so that
+// "always drop at 3 × grab" no longer clears six levels.
+test('designed drop distances', () => {
+  const want: Record<number, number[]> = { 1: [6], 2: [2], 4: [3.6], 5: [6], 6: [6], 7: [6], 8: [3], 9: [7], 10: [5], 11: [7], 12: [3.6], 13: [3], 14: [3, 6], 15: [3.2], 16: [2.4], 17: [1.5], 18: [6, 3.6, 5] };
   for (const [id, ds] of Object.entries(want)) {
     const p = plan(LEVELS[Number(id) - 1]);
     assert.deepEqual(p.map((s) => Math.round(s.d2 * 1000) / 1000), ds, `level ${id}`);
