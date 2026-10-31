@@ -12,6 +12,7 @@ import {
   floorTexture,
   glassTexture,
   glowSprite,
+  wallWashTexture,
   labelTexture,
   marbleTexture,
   padTexture,
@@ -460,6 +461,38 @@ export function buildLevel(level: Level): LevelView {
     };
     for (let x = R.x0 + 1.6; x <= R.x1 - 1.6; x += 3.2) { pilaster(x, R.z0, 0); pilaster(x, R.z1, Math.PI); }
     for (let z = R.z0 + 1.6; z <= R.z1 - 1.6; z += 3.2) { pilaster(R.x0, z, Math.PI / 2); pilaster(R.x1, z, -Math.PI / 2); }
+    if (R.theme === 'shadows') {
+      // Moody museum uplights between the pilasters: a brass floor fixture and a warm wash up the
+      // wall (additive decal, no real light, so the one shadow-casting lamp stays the only light).
+      const washMat = new THREE.MeshBasicMaterial({ map: wallWashTexture(), transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false });
+      const wash = (x: number, z: number, yaw: number, onSolid = false) => {
+        if (avoid.some((a) => Math.hypot(a[0] - x, a[1] - z) < 1.3)) return;
+        if (!onSolid && level.props.some((pr) => pr.kind === 'solid' && x > pr.min[0] - 0.4 && x < pr.max[0] + 0.4 && z > pr.min[2] - 0.4 && z < pr.max[2] + 0.4 && pr.max[1] > 0.4)) return;
+        const g = new THREE.Group();
+        const fx = mesh(new THREE.BoxGeometry(0.34, 0.1, 0.18), M.darkBrass(), false);
+        fx.position.set(0, 0.05, 0.14);
+        g.add(fx);
+        const lens = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.1), new THREE.MeshBasicMaterial({ color: '#ffd9a0' }));
+        lens.rotation.x = -Math.PI / 2;
+        lens.position.set(0, 0.101, 0.14);
+        g.add(lens);
+        const h = Math.min(R.h - 0.4, 3.6);
+        const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.5, h), washMat);
+        plane.position.set(0, h / 2, 0.03);
+        g.add(plane);
+        g.position.set(x, 0, z);
+        g.rotation.y = yaw;
+        root.add(g);
+      };
+      for (let x = R.x0 + 3.2; x <= R.x1 - 1.6; x += 3.2) { wash(x, R.z0 + 0.012, 0); wash(x, R.z1 - 0.012, Math.PI); }
+      for (let z = R.z0 + 3.2; z <= R.z1 - 1.6; z += 3.2) { wash(R.x0 + 0.012, z, Math.PI / 2); wash(R.x1 - 0.012, z, -Math.PI / 2); }
+      // Tall walls built as solids (the level 10 balcony) get washes on their room-facing face.
+      for (const pr of level.props) {
+        if (pr.kind !== 'solid' || pr.max[1] < 2.5) continue;
+        if (pr.max[2] < R.z1 - 0.5) for (let x = pr.min[0] + 1.6; x <= pr.max[0] - 1.2; x += 3.2) wash(x, pr.max[2] + 0.012, 0, true);
+        if (pr.min[2] > R.z0 + 0.5) for (let x = pr.min[0] + 1.6; x <= pr.max[0] - 1.2; x += 3.2) wash(x, pr.min[2] - 0.012, Math.PI, true);
+      }
+    }
     // Chandeliers (not in the Hall of Shadows: one lamp, long shadows).
     if (R.theme !== 'shadows' && R.h >= 3.8) {
       const count = D > 13 ? 2 : 1;
@@ -742,7 +775,7 @@ export function buildLevel(level: Level): LevelView {
   // Lights.
   const sky = skyTexture(roof ? 'rooftop' : 'night');
   const shadowHall = R.theme === 'shadows';
-  const hemi = new THREE.HemisphereLight(roof ? '#ffd9c4' : shadowHall ? '#6a4a2a' : '#4a64b8', roof ? '#6a4a5a' : '#120e0a', roof ? 0.3 : shadowHall ? 0.35 : 0.8);
+  const hemi = new THREE.HemisphereLight(roof ? '#ffd9c4' : shadowHall ? '#6a4a2a' : '#4a64b8', roof ? '#6a4a5a' : '#120e0a', roof ? 0.3 : shadowHall ? (level.sun ? 0.35 : 0.6) : 0.8);
   root.add(hemi);
   const sunElev = ((level.sun?.elevation ?? 55) * Math.PI) / 180;
   const sunDir = level.sun?.shadowDir ?? 0.6;
@@ -1345,7 +1378,7 @@ function buildTarget(t: Target, level: Level, root: THREE.Group): TargetVisual {
 
   // Brass plate beside the target, facing into the room (local +z).
   const wallMounted = ['niche', 'vent', 'doorway', 'laserWall', 'frameTri', 'framePoly', 'window', 'keyhole'].includes(t.socket);
-  const plate = labelPlane(t.plate, t.socket === 'niche' ? 1.25 : t.socket === 'framePoly' ? 0.5 : 0.95, 'brass');
+  const plate = labelPlane(t.plate, t.socket === 'niche' ? 1.25 : t.socket === 'framePoly' ? 0.7 : 0.95, 'brass');
   const side = Math.max(w / 2, 0.45) + 0.55;
   const local = new THREE.Vector3(-side, wallMounted ? 1.55 - t.anchor[1] : 1.05 - t.anchor[1], wallMounted ? Math.max(0.02, b.min[2] + 0.02) : 0);
   if (t.socket === 'niche') local.set(-1.75 - 0.4, 2.1, -0.75);

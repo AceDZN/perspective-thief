@@ -45,16 +45,23 @@ function starsHtml(n: number, of = 3): string {
 // ─────────────── persistence ───────────────
 const KEY = 'perspective-thief:v1';
 const LEARN = 'perspective-thief:learn';
-interface Save { stars: Record<number, number>; reduced: boolean; muted: boolean; current: number; challenges: Record<number, number>; seenWorlds: number[]; sens: number; revealed: Record<number, boolean> }
+interface Save { stars: Record<number, number>; reduced: boolean; muted: boolean; current: number; challenges: Record<number, number>; seenWorlds: number[]; sens: number; revealed: Record<number, boolean>; best: Record<number, number> }
 function loadSave(): Save {
   try {
     const s = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-    return { stars: s.stars ?? {}, reduced: !!s.reduced, muted: !!s.muted, current: s.current ?? 1, challenges: s.challenges ?? {}, seenWorlds: s.seenWorlds ?? [], sens: s.sens ?? 1, revealed: s.revealed ?? {} };
+    return { stars: s.stars ?? {}, reduced: !!s.reduced, muted: !!s.muted, current: s.current ?? 1, challenges: s.challenges ?? {}, seenWorlds: s.seenWorlds ?? [], sens: s.sens ?? 1, revealed: s.revealed ?? {}, best: s.best ?? {} };
   } catch {
-    return { stars: {}, reduced: false, muted: false, current: 1, challenges: {}, seenWorlds: [], sens: 1, revealed: {} };
+    return { stars: {}, reduced: false, muted: false, current: 1, challenges: {}, seenWorlds: [], sens: 1, revealed: {}, best: {} };
   }
 }
 const save = loadSave();
+/** Thief rank by total stars (out of 54). */
+const RANKS: [number, string][] = [[0, 'כייס מתחיל'], [9, 'פורץ מתלמד'], [21, 'גנב מקצועי'], [36, 'מאסטר הפרספקטיבה'], [54, 'אגדת המוזיאון']];
+function rankOf(stars: number): string {
+  let r = RANKS[0][1];
+  for (const [min, name] of RANKS) if (stars >= min) r = name;
+  return r;
+}
 function persist(): void {
   try { localStorage.setItem(KEY, JSON.stringify(save)); } catch { /* private mode */ }
 }
@@ -428,7 +435,13 @@ function showWin(): void {
   const stars = sim.stars;
   const isGen = level.id < 0;
   const prev = save.stars[level.id] ?? 0;
+  const rankBefore = rankOf(totalStars());
   if (!isGen) save.stars[level.id] = Math.max(prev, stars);
+  const rankAfter = rankOf(totalStars());
+  const secsRun = Math.round(sim.time);
+  const prevBest = isGen ? undefined : save.best[level.id];
+  const newBest = !isGen && (prevBest === undefined || secsRun < prevBest);
+  if (newBest) save.best[level.id] = secsRun;
   else save.challenges[level.world] = (save.challenges[level.world] ?? 0) + 1;
   const next = isGen ? undefined : LEVELS.find((l) => l.id === level!.id + 1);
   if (next) { if (next.id > save.current) save.current = next.id; selected = next.id; }
@@ -436,13 +449,15 @@ function showWin(): void {
   flushLearn(sim);
   const s = sim.stats;
   const acc = sim.fits.length ? sim.fits.reduce((a, f) => a + f.accuracy, 0) / sim.fits.length : 1;
-  const secs = Math.round(sim.time);
+  const secs = secsRun;
+  const fmt = (t: number) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
   const badges: string[] = [];
   if (sim.fits.length && sim.fits.every((f) => f.firstTry)) badges.push('🎯 בניסיון הראשון, בלי עזרה');
   if (!s.alarms) badges.push('🤫 בלי אזעקה');
   if (acc >= 0.995 && !s.failures) badges.push('🔬 דיוק של צלף');
   if (sim.revealedBefore) badges.push('ℹ️ התשובה הוצגה בניסיון קודם — עד 2 כוכבים');
   if (stars === 3 && prev < 3 && prev > 0) badges.push('⭐ שיפרתם ל־3 כוכבים');
+  if (newBest && prevBest !== undefined) badges.push('🏁 שיא זמן אישי חדש');
   const why: string[] = [];
   if (s.hints) why.push('רמז');
   if (s.alarms) why.push('אזעקה');
@@ -457,11 +472,12 @@ function showWin(): void {
   <p class="wintitle">${html(level.title)}</p>
   <div class="results">
     <div><span class="rl">דיוק ההנחה המוצלחת</span><span class="rv"><bdi dir="ltr">${(acc * 100).toFixed(1)}%</bdi></span></div>
-    <div><span class="rl">זמן</span><span class="rv"><bdi dir="ltr">${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}</bdi></span></div>
+    <div><span class="rl">זמן${isGen ? '' : ` · שיא <bdi dir="ltr">${fmt(save.best[level.id])}</bdi>`}</span><span class="rv"><bdi dir="ltr">${fmt(secs)}</bdi></span></div>
     <div><span class="rl">איבדתם כוכב על</span><span class="rv small">${why.length ? why.join(' · ') : '—'}</span></div>
   </div>
   ${badges.length ? `<div class="badges">${badges.map((b) => `<span>${b}</span>`).join('')}</div>` : ''}
   <p class="skill">תרגלתם: ${html(level.skill)}</p>
+  ${rankAfter !== rankBefore ? `<div class="rankup">🎖️ דרגה חדשה: <b>${rankAfter}</b></div>` : ''}
   ${unlockNote}
   <div class="row">${next ? '<button class="btn primary" id="winNext">לשלב הבא</button>' : ''}${isGen ? '<button class="btn primary" id="winMore">עוד חדר אתגר</button>' : ''}<button class="btn" id="winAgain">${stars < 3 && !isGen ? 'שוב, ל־3 כוכבים' : 'שוב'}</button><button class="btn" id="winMap">למפה</button></div>`);
   const nb = document.getElementById('winNext');
@@ -564,6 +580,8 @@ function enterLevel(l: Level): void {
   successGlow = null;
   raccoonShow = null;
   consequenceFx = null;
+  lastGuardMode = sim.guard.mode;
+  sayClear();
   camY = sim.player.y + EYE;
   acc = 0;
   mode = 'play';
@@ -638,7 +656,7 @@ function openMenu(): void {
 }
 
 function renderMenuDom(): void {
-  $('menuStars').innerHTML = `<bdi dir="ltr">${totalStars()} / ${LEVELS.length * 3}</bdi>`;
+  $('menuStars').innerHTML = `<bdi dir="ltr">${totalStars()} / ${LEVELS.length * 3}</bdi><span class="rank">${rankOf(totalStars())}</span>`;
   const nodes = $('nodes');
   nodes.innerHTML = '';
   const firstOpen = LEVELS.find((l) => unlocked(l.id) && !save.stars[l.id])?.id ?? LEVELS[LEVELS.length - 1].id;
@@ -792,6 +810,7 @@ function onEvent(e: GameEvent): void {
       if (t.success === 'raccoon' || t.success === 'open') {
         raccoonShow = { pos: p.clone().add(new THREE.Vector3(Math.sin(t.yaw) * 1.1 + Math.cos(t.yaw) * 0.9, 0, Math.cos(t.yaw) * 1.1 - Math.sin(t.yaw) * 0.9)), t: 0 };
         audio.cheer();
+        say('raccoon', pickLine(RACCOON_YES));
       }
       if (t.socket === 'loop' || t.socket === 'plate') solvedLaserOff.add(t.id);
       break;
@@ -945,7 +964,8 @@ function syncView(dt: number, realtime: boolean): void {
       m.position.copy(holdPos).sub(tmpV).add(new THREE.Vector3(0, bob, 0));
       outline.selectedObjects = [m];
       sparkles.visible = true;
-      updateSparkles(holdPos, Math.max(0.2, (lb.max[1] - lb.min[1]) * s * 0.7));
+      // Capped: a tall held object (the level 10 pole) must not spray giant orbs past the camera.
+      updateSparkles(holdPos, Math.min(0.5, Math.max(0.2, (lb.max[1] - lb.min[1]) * s * 0.7)));
       continue;
     }
     if (ex.state === 'flying' && sim.whoosh && sim.whoosh.exId === ex.def.id) {
@@ -1054,6 +1074,17 @@ function syncView(dt: number, realtime: boolean): void {
     const gd = Math.hypot(G.pos[0] - sim.player.x, G.pos[1] - sim.player.z);
     audio.setDanger(G.mode === 'off' || G.mode === 'leave' ? 0 : 1 - gd / 7);
   }
+  if (G.mode !== lastGuardMode) {
+    const lines = GUARD_LINES[G.mode];
+    if (lines) say('guard', pickLine(lines), G.mode === 'chase' || G.mode === 'grab');
+    lastGuardMode = G.mode;
+  }
+  if (G.mode === 'patrol' && sim.moved && realtime && sim.time > nextQuip) {
+    nextQuip = sim.time + 16 + Math.random() * 10;
+    if (sim.time > 6) say('guard', pickLine(GUARD_IDLE));
+  }
+  if (phase === 'consequence' && consequenceFx === 'pocketed' && !saidPocket) { saidPocket = true; say('guard', pickLine(GUARD_POCKET)); }
+  if (phase !== 'consequence') saidPocket = false;
   const gr = view.guard;
   const showGuard = G.mode !== 'off' || (phase === 'consequence' && consequenceFx === 'pocketed');
   gr.root.visible = showGuard;
@@ -1100,6 +1131,8 @@ function syncView(dt: number, realtime: boolean): void {
     if (phase === 'won') rc.play(['cheer', 'jump', 'dance']);
   }
   rc.update(dt, !!raccoonShow);
+  placeSay('guard', gr.root.visible ? gr.root.position : null, 2.25, dt);
+  placeSay('raccoon', rc.root.visible ? rc.root.position : null, 0.95, dt);
 
   // Aim dot + rangefinder beam.
   const a = sim.aim;
@@ -1180,6 +1213,60 @@ function animateFailure(m: THREE.Object3D, t: number, kind: ConsequenceKind, yaw
   }
 }
 
+// ───────────── speech bubbles ─────────────
+
+const GUARD_LINES: Partial<Record<string, string[]>> = {
+  chase: ['עצור! גנב!', 'מי שם?!', 'היי! זה רכוש המוזיאון!', 'אני רואה אותך!'],
+  search: ['לאן נעלמת…?', 'אני יודע שמישהו פה…', 'הממ… רק חתול?'],
+  leave: ['בטח היה רק הרוח.', 'חוזר לקפה שלי.', 'מוזיאון מוזר…'],
+  grab: ['תפסתי אותך!'],
+};
+const GUARD_IDLE = ['עוד משמרת לילה…', 'שקט פה… שקט מדי.', 'אוף, עוד שלוש שעות.', 'מי מזיז פה פסלים?'];
+const GUARD_POCKET = ['אוהו, מזכרת קטנה!', 'מה זה? ישר לכיס!'];
+const RACCOON_YES = ['יש!', 'מושלם, שותף!', 'בדיוק בגודל!', 'וואו!'];
+let lastGuardMode = 'off';
+let nextQuip = 8;
+let saidPocket = false;
+const sayState: Record<'guard' | 'raccoon', { t: number }> = { guard: { t: 0 }, raccoon: { t: 0 } };
+const lastLine = new Map<string[], number>();
+
+function pickLine(lines: string[]): string {
+  let i = Math.floor(Math.random() * lines.length);
+  if (lines.length > 1 && i === lastLine.get(lines)) i = (i + 1) % lines.length;
+  lastLine.set(lines, i);
+  return lines[i];
+}
+
+function say(who: 'guard' | 'raccoon', text: string, shout = false): void {
+  const el = $(who === 'guard' ? 'sayGuard' : 'sayRaccoon');
+  el.textContent = text;
+  el.classList.toggle('shout', shout);
+  sayState[who].t = 2.4;
+}
+
+function sayClear(): void {
+  for (const who of ['guard', 'raccoon'] as const) {
+    sayState[who].t = 0;
+    $(who === 'guard' ? 'sayGuard' : 'sayRaccoon').classList.remove('on');
+  }
+}
+
+/** Projects the speaker's head to the screen; hidden when off-screen, behind or the bubble timed out. */
+function placeSay(who: 'guard' | 'raccoon', pos: THREE.Vector3 | null, head: number, dt: number): void {
+  const st = sayState[who];
+  const el = $(who === 'guard' ? 'sayGuard' : 'sayRaccoon');
+  st.t = Math.max(0, st.t - dt);
+  if (!pos || st.t <= 0) { el.classList.remove('on'); return; }
+  const v = tmpV.set(pos.x, pos.y + head, pos.z).project(camera);
+  const onScreen = v.z < 1 && Math.abs(v.x) < 0.95 && v.y < 0.95 && v.y > -0.9;
+  el.classList.toggle('on', onScreen);
+  if (!onScreen) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  el.style.left = `${((v.x + 1) / 2) * r.width}px`;
+  // Kept below the toast band (top ~22–30 %) so the two never overlap.
+  el.style.top = `${Math.max(r.height * 0.36, ((1 - v.y) / 2) * r.height)}px`;
+}
+
 function updateSparkles(center: THREE.Vector3, r: number): void {
   const pos = sparkles.geometry.getAttribute('position') as THREE.BufferAttribute;
   const seeds = sparkles.userData.seeds as number[][];
@@ -1190,7 +1277,7 @@ function updateSparkles(center: THREE.Vector3, r: number): void {
     pos.setXYZ(i, center.x + Math.cos(ang) * r * (0.9 + s * 0.4), center.y + y * r * 0.9 + Math.sin(t * 2 + a) * 0.03, center.z + Math.sin(ang) * r * (0.9 + s * 0.4));
   }
   pos.needsUpdate = true;
-  (sparkles.material as THREE.PointsMaterial).size = Math.max(0.02, r * 0.09);
+  (sparkles.material as THREE.PointsMaterial).size = Math.min(0.04, Math.max(0.02, r * 0.09));
 }
 
 function updateHud(): void {

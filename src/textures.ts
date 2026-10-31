@@ -577,6 +577,26 @@ export function glowSprite(color = '#ffcc66'): THREE.CanvasTexture {
   });
 }
 
+/** A warm uplight washing up a wall: bright at the floor fixture, fanning out and fading upward. */
+export function wallWashTexture(): THREE.CanvasTexture {
+  return cached('wallwash', () => {
+    const [c, g] = canvas(128, 256);
+    for (let y = 0; y < 256; y++) {
+      const t = 1 - y / 256; // 1 at the top of the canvas … 0 at the floor
+      const up = 1 - t;
+      const half = 10 + t * 54;
+      const a = Math.pow(up, 1.6) * 0.95;
+      const grad = g.createLinearGradient(64 - half, 0, 64 + half, 0);
+      grad.addColorStop(0, 'rgba(255,190,110,0)');
+      grad.addColorStop(0.5, `rgba(255,205,140,${a})`);
+      grad.addColorStop(1, 'rgba(255,190,110,0)');
+      g.fillStyle = grad;
+      g.fillRect(0, y, 128, 1);
+    }
+    return tex(c);
+  });
+}
+
 export function skyTexture(theme: string): THREE.CanvasTexture {
   return cached('sky-' + theme, () => {
     const [c, g] = canvas(512, 256);

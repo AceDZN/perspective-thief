@@ -268,3 +268,27 @@ body.intro #hud { opacity: 0; transition: opacity 0.4s; }
 #stamp .st2 { font-size: 26px; font-weight: 700; color: #fff; text-shadow: 0 2px 6px #000; }
 body.reduced #stamp.on { animation-duration: 1.2s; }
 @container (max-width: 700px) { #stamp .st1 { font-size: 46px; } #stamp .st2 { font-size: 18px; } }
+
+/* Speech bubbles over the guard and the raccoon (projected from 3D each frame). */
+.say {
+  position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; white-space: nowrap;
+  padding: 7px 16px 8px; border-radius: 18px; font-size: 19px; font-weight: 700; direction: rtl;
+  background: #fffaf0; color: #2a1a08; border: 3px solid #2a1a08; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+  opacity: 0; transform: translate(-50%, -100%) scale(0.6); transition: opacity 0.18s, transform 0.18s cubic-bezier(.3, 1.6, .5, 1);
+}
+.say::after {
+  content: ''; position: absolute; left: 50%; bottom: -13px; margin-left: -9px;
+  border: 9px solid transparent; border-top: 11px solid #2a1a08; border-bottom: 0;
+}
+.say.on { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+.say.guard.shout { background: #ffe0d8; border-color: #7a0d0d; color: #5a0505; font-size: 22px; }
+.say.guard.shout::after { border-top-color: #7a0d0d; }
+.say.raccoon { background: #fff3c4; }
+body.intro .say { display: none; }
+@container (max-width: 700px) { .say { font-size: 15px; padding: 5px 12px 6px; } .say.guard.shout { font-size: 17px; } }
+
+.pillbox .rank { font-size: 14px; font-weight: 600; color: var(--gold); padding-inline-start: 10px; border-inline-start: 1px solid rgba(232, 200, 115, 0.4); }
+.rankup { margin: 8px auto; padding: 8px 14px; border-radius: 12px; font-size: 20px; background: linear-gradient(90deg, rgba(255, 200, 80, 0.08), rgba(255, 200, 80, 0.25), rgba(255, 200, 80, 0.08)); border: 2px solid var(--gold); animation: rankGlow 1.2s ease-in-out infinite alternate; }
+@keyframes rankGlow { from { box-shadow: 0 0 6px rgba(255, 200, 80, 0.3); } to { box-shadow: 0 0 22px rgba(255, 200, 80, 0.8); } }
+body.reduced .rankup { animation: none; }
+@container (max-width: 700px) { .pillbox .rank { display: none; } }
