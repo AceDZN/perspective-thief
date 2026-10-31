@@ -292,3 +292,8 @@ body.intro .say { display: none; }
 @keyframes rankGlow { from { box-shadow: 0 0 6px rgba(255, 200, 80, 0.3); } to { box-shadow: 0 0 22px rgba(255, 200, 80, 0.8); } }
 body.reduced .rankup { animation: none; }
 @container (max-width: 700px) { .pillbox .rank { display: none; } }
+
+.recap { margin: 6px auto; padding: 8px 12px; border-radius: 10px; background: rgba(0, 0, 0, 0.28); border: 1px solid rgba(232, 200, 115, 0.3); font-size: 15px; line-height: 1.7; }
+.recap .rh { font-size: 12px; color: var(--gold); letter-spacing: 0.05em; }
+.recap bdi { font-weight: 700; color: #ffe7a6; }
+@container (max-width: 700px) { .recap { font-size: 12px; } }

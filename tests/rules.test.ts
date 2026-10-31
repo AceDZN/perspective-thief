@@ -12,6 +12,7 @@ import {
   powerName,
   proportion,
   ratio,
+  recap,
   scaledMeasure,
   starsFor,
   type Measure,
@@ -239,4 +240,12 @@ test('starsFor: hints, alarms, failures and re-grabs', () => {
   assert.equal(s(0, 0, 2), 1, 'a second failed drop costs another star');
   assert.equal(starsFor({ hints: 0, alarms: 1, failures: 1, regrabs: 0, caught: 1 }), 1, 'getting caught instead of hiding costs a star');
   assert.equal(s(5, 5, 5, 5), 1, 'never below 1');
+});
+
+test('recap: the worked solution for each ratio kind', () => {
+  assert.equal(recap(len(0.5), 1, need(1.5), 2), 'יחס אורכים: ⟦1.5 ÷ 0.5 = 3⟧ ← ⟦k = 3⟧ · ⟦d₂ = 3 × 2 = 6⟧');
+  assert.equal(recap(area(0.24), 1, need(2.16), 1.2), 'יחס שטחים: ⟦2.16 ÷ 0.24 = 9⟧ ← ⟦k² = 9⟧ ← ⟦k = √9 = 3⟧ · ⟦d₂ = 3 × 1.2 = 3.6⟧');
+  assert.equal(recap(weight(2), 1, need(16), 1.2), 'יחס נפחים: ⟦16 ÷ 2 = 8⟧ ← ⟦k³ = 8⟧ ← ⟦k = ∛8 = 2⟧ · ⟦d₂ = 2 × 1.2 = 2.4⟧');
+  // An exhibit already enlarged × 2 (level 17): the ratio uses its current size.
+  assert.equal(recap(len(0.12), 2, need(0.12), 3), 'יחס אורכים: ⟦0.12 ÷ 0.24 = 0.5⟧ ← ⟦k = 0.5⟧ · ⟦d₂ = 0.5 × 3 = 1.5⟧');
 });

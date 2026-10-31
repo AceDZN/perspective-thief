@@ -164,6 +164,22 @@ export function explain(check: DropCheck, m: Measure, d1: number, d2: number, at
   return lines;
 }
 
+/**
+ * The worked solution for a successful drop, for the results screen: the ratio the player had to
+ * see, k, and the drop distance it gives. `scale` is the exhibit's scale before the drop.
+ */
+export function recap(m: Measure, scale: number, need: Need, d1: number): string {
+  const have = m.value * Math.pow(scale, m.power);
+  if (need.min !== undefined && need.max !== undefined && m.power === 1) {
+    const lo = need.min / have, hi = need.max / have;
+    return `${powerName(1)}: ⟦k⟧ בין ⟦${fmt(need.min)} ÷ ${fmt(have)} = ${fmt(lo)}⟧ ל־⟦${fmt(need.max)} ÷ ${fmt(have)} = ${fmt(hi)}⟧ · ⟦d₂⟧ בין ⟦${fmt(lo * d1)}⟧ ל־⟦${fmt(hi * d1)}⟧`;
+  }
+  const r = need.value / have;
+  const k = Math.pow(r, 1 / m.power);
+  const kPart = m.power === 1 ? `⟦k = ${fmt(k)}⟧` : `⟦k${m.power === 2 ? '²' : '³'} = ${fmt(r)}⟧ ← ⟦k = ${m.power === 2 ? '√' : '∛'}${fmt(r)} = ${fmt(k)}⟧`;
+  return `${powerName(m.power)}: ⟦${fmt(need.value)} ÷ ${fmt(have)} = ${fmt(r)}⟧ ← ${kPart} · ⟦d₂ = ${fmt(k)} × ${fmt(d1)} = ${fmt(k * d1)}⟧`;
+}
+
 export interface StarInput {
   hints: number;
   alarms: number;

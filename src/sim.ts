@@ -1,7 +1,7 @@
 // Headless game simulation: movement, aiming, grab/drop, consequences, guard, stars.
 // No Three.js. The scene reads this state and renders it; tests drive it directly.
 import { LEVELS, type Exhibit, type Level, type Target, type V2, type V3 } from './levels.ts';
-import { checkDrop, explain, starsFor, type ConsequenceKind, type DropCheck } from './rules.ts';
+import { checkDrop, explain, recap, starsFor, type ConsequenceKind, type DropCheck } from './rules.ts';
 import { CASE_H, CASE_HALF, decorCases, type DecorCase } from './decor.ts';
 import { aabbOverlap, localBounds, rampTop, rayAABB, rotateOrientation, worldAABB, type AABB } from './shapes.ts';
 
@@ -182,7 +182,7 @@ export class Sim {
   private attempts = new Map<string, number>();
   decor: DecorCase[] = [];
   /** Every successful drop: how close k was to the exact ratio (1 = perfect). */
-  fits: { targetId: string; k: number; kNeeded: number; accuracy: number; firstTry: boolean }[] = [];
+  fits: { targetId: string; k: number; kNeeded: number; accuracy: number; firstTry: boolean; recap: string }[] = [];
 
   constructor(levelOrId: Level | number) {
     this.level = typeof levelOrId === 'number' ? LEVELS.find((l) => l.id === levelOrId)! : levelOrId;
@@ -495,7 +495,7 @@ export class Sim {
       else if (check.verdict === 'noFit') kind = 'noFit';
       this.learn({ action: 'drop', exId: ex.def.id, targetId: t.id, d1, d2, k, kNeeded: check.kNeeded, outcome: kind ?? 'fit', attempt, firstUnaided: attempt === 1 && !this.hintShown });
       if (!kind) {
-        this.fits.push({ targetId: t.id, k, kNeeded: check.kNeeded, accuracy: Math.max(0, 1 - Math.abs(k - check.kNeeded) / check.kNeeded), firstTry: attempt === 1 && !this.hintShown && !this.revealedBefore });
+        this.fits.push({ targetId: t.id, k, kNeeded: check.kNeeded, accuracy: Math.max(0, 1 - Math.abs(k - check.kNeeded) / check.kNeeded), firstTry: attempt === 1 && !this.hintShown && !this.revealedBefore, recap: recap(measure, ex.scale, t.need, d1) });
         this.whoosh = { exId: ex.def.id, from: { scale: ex.scale }, to: [...t.anchor] as V3, yaw: t.yaw, newScale, t: 0, dur: 0.45, verdict: 'fit' };
         this.setPhase('whoosh');
         return true;

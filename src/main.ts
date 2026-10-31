@@ -476,6 +476,7 @@ function showWin(): void {
     <div><span class="rl">איבדתם כוכב על</span><span class="rv small">${why.length ? why.join(' · ') : '—'}</span></div>
   </div>
   ${badges.length ? `<div class="badges">${badges.map((b) => `<span>${b}</span>`).join('')}</div>` : ''}
+  ${sim.fits.length ? `<div class="recap"><div class="rh">הפתרון שלכם</div>${sim.fits.map((f) => `<div>${html(f.recap)}</div>`).join('')}</div>` : ''}
   <p class="skill">תרגלתם: ${html(level.skill)}</p>
   ${rankAfter !== rankBefore ? `<div class="rankup">🎖️ דרגה חדשה: <b>${rankAfter}</b></div>` : ''}
   ${unlockNote}
