@@ -75,7 +75,7 @@ bdi, .ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; white-
 #toast {
   z-index: 7; pointer-events: none;
   position: absolute; left: 50%; top: 22%; transform: translateX(-50%); padding: 10px 22px; border-radius: 12px;
-  background: var(--panel); border: 2px solid var(--gold2); font-size: 22px; font-weight: 600; opacity: 0; transition: opacity 0.25s; white-space: nowrap;
+  background: var(--panel); border: 2px solid var(--gold2); font-size: 22px; font-weight: 600; opacity: 0; transition: opacity 0.25s; width: max-content; max-width: min(92%, 860px); text-align: center;
 }
 #toast.show { opacity: 1; }
 #toast.good { border-color: #6fdc8c; color: #d8ffe2; }

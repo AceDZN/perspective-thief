@@ -582,6 +582,8 @@ function enterLevel(l: Level): void {
   raccoonShow = null;
   consequenceFx = null;
   lastGuardMode = sim.guard.mode;
+  lastActT = 0;
+  nudges = 0;
   sayClear();
   camY = sim.player.y + EYE;
   acc = 0;
@@ -785,8 +787,8 @@ function onEvent(e: GameEvent): void {
   if (!sim || !view || !level) return;
   switch (e.type) {
     case 'step': audio.step(); viewBob += 1; break;
-    case 'grab': if (!reduced) fovPunch = 4; audio.grab(); showToast(e.pad ? `תפסתם ממרחק ⟦${e.d1.toFixed(2)}⟧ מ'` : `תפסתם · ⟦d₁ = ${e.d1.toFixed(2)}⟧ מ'`); break;
-    case 'drop': audio.whoosh(); break;
+    case 'grab': lastActT = sim?.time ?? 0; if (!reduced) fovPunch = 4; audio.grab(); showToast(e.pad ? `תפסתם ממרחק ⟦${e.d1.toFixed(2)}⟧ מ'` : `תפסתם · ⟦d₁ = ${e.d1.toFixed(2)}⟧ מ'`); break;
+    case 'drop': audio.whoosh(); lastActT = sim?.time ?? 0; break;
     case 'floor': audio.whoosh(); showToast('העדשה עובדת רק על מטרה — המוצג חזר לכן', '', 2200); break;
     case 'fit': {
       audio.fit();
@@ -1132,6 +1134,14 @@ function syncView(dt: number, realtime: boolean): void {
     if (phase === 'won') rc.play(['cheer', 'jump', 'dance']);
   }
   rc.update(dt, !!raccoonShow);
+  // Stuck for a while? The raccoon points at where the numbers are (free, never the answer).
+  if (realtime && phase === 'play' && !cardKind && level.id > 0 && !level.noHints && nudges < 2 && sim.time - lastActT > 40 + nudges * 45) {
+    const line = sim.carry ? RACCOON_NUDGE_CARRY : RACCOON_NUDGE[nudges];
+    nudges++;
+    lastActT = sim.time;
+    say('raccoon', '🦝 ' + line.split('·')[0].trim());
+    showToast('🦝 ' + line, '', 5200);
+  }
   placeSay('guard', gr.root.visible ? gr.root.position : null, 2.25, dt);
   placeSay('raccoon', rc.root.visible ? rc.root.position : null, 0.95, dt);
 
@@ -1225,6 +1235,13 @@ const GUARD_LINES: Partial<Record<string, string[]>> = {
 const GUARD_IDLE = ['עוד משמרת לילה…', 'שקט פה… שקט מדי.', 'אוף, עוד שלוש שעות.', 'מי מזיז פה פסלים?'];
 const GUARD_POCKET = ['אוהו, מזכרת קטנה!', 'מה זה? ישר לכיס!'];
 const RACCOON_YES = ['יש!', 'מושלם, שותף!', 'בדיוק בגודל!', 'וואו!'];
+const RACCOON_NUDGE = [
+  'פססט, שותף! · כל המספרים כתובים: השלט ליד המוצג והלוחית ליד המטרה',
+  'עוד טיפ · השוו את המספר בלוחית למספר בשלט — זה ⟦k⟧ (או ⟦k²⟧, ⟦k³⟧)',
+];
+const RACCOON_NUDGE_CARRY = 'זוכרים? · ⟦d₂ = k × d₁⟧ — הסרגל על הרצפה עוזר למצוא את המרחק';
+let lastActT = 0;
+let nudges = 0;
 let lastGuardMode = 'off';
 let nextQuip = 8;
 let saidPocket = false;
