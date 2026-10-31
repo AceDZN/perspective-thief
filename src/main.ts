@@ -12,7 +12,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { LEVELS, WORLDS, levelById, type Level } from './levels.ts';
 import { EYE, NO_INPUT, Sim, type GameEvent, type Input } from './sim.ts';
-import { starsFor, type ConsequenceKind } from './rules.ts';
+import { liveGuide, starsFor, type ConsequenceKind } from './rules.ts';
 import { localBounds } from './shapes.ts';
 import { buildExhibitMesh, buildLevel, themeFog, type LevelView } from './world.ts';
 import { Character, loadModels, modelInstance } from './models.ts';
@@ -1322,6 +1322,23 @@ function updateHud(): void {
   } else {
     dEl.innerHTML = `<bdi dir="ltr">d = —</bdi>`;
     dEl.classList.add('muted');
+  }
+  // Live k while carrying, and on the first level (or after a hint) the size it would give.
+  const kEl = $('hudK');
+  const g = $('hudGuide');
+  let guide: ReturnType<typeof liveGuide> | null = null;
+  if (sim.carry && sim.phase === 'play' && a.kind !== 'none' && a.d > 0) {
+    kEl.innerHTML = `<bdi dir="ltr">k = ${a.d.toFixed(2)} ÷ ${sim.carry.d1.toFixed(2)} = ${(a.d / sim.carry.d1).toFixed(2)}</bdi>`;
+    const t = a.kind === 'target' ? sim.target(a.id!) : undefined;
+    const ex = sim.ex(sim.carry.exId)!;
+    const guided = !level.noHints && (level.id === 1 || sim.hintShown);
+    if (guided && t && t.accepts === ex.def.id && a.valid) guide = liveGuide(ex.def.measures[t.measure], t.need, ex.scale, sim.carry.d1, a.d);
+  } else kEl.innerHTML = '';
+  g.hidden = !guide;
+  if (guide) {
+    $('hudGuideSize').innerHTML = html(guide.size);
+    $('hudGuideStat').textContent = guide.status;
+    g.dataset.v = guide.verdict;
   }
   let aimTag = '';
   let prompt = '';

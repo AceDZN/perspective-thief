@@ -8,6 +8,7 @@ import {
   explain,
   fmt,
   kWindow,
+  liveGuide,
   naiveK,
   powerName,
   proportion,
@@ -248,4 +249,20 @@ test('recap: the worked solution for each ratio kind', () => {
   assert.equal(recap(weight(2), 1, need(16), 1.2), 'יחס נפחים: ⟦16 ÷ 2 = 8⟧ ← ⟦k³ = 8⟧ ← ⟦k = ∛8 = 2⟧ · ⟦d₂ = 2 × 1.2 = 2.4⟧');
   // An exhibit already enlarged × 2 (level 17): the ratio uses its current size.
   assert.equal(recap(len(0.12), 2, need(0.12), 3), 'יחס אורכים: ⟦0.12 ÷ 0.24 = 0.5⟧ ← ⟦k = 0.5⟧ · ⟦d₂ = 0.5 × 3 = 1.5⟧');
+});
+
+test('liveGuide: the level 1 readout says the size and which way to move', () => {
+  const near = liveGuide(len(0.5), need(1.5), 1, 2, 5);
+  assert.equal(near.verdict, 'tooSmall');
+  assert.match(near.size, /⟦0\.5 × 2\.50 = 1\.25⟧ .* צריך ⟦1\.5⟧/);
+  assert.match(near.status, /קטן מדי — התרחקו/);
+  const far = liveGuide(len(0.5), need(1.5), 1, 2, 6.5);
+  assert.equal(far.verdict, 'tooBig');
+  assert.match(far.status, /גדול מדי — התקרבו/);
+  const ok = liveGuide(len(0.5), need(1.5), 1, 2, 6.05);
+  assert.equal(ok.verdict, 'fit');
+  assert.match(ok.status, /✓ בדיוק/);
+  const sq = liveGuide(area(0.24), need(2.16), 1, 1.2, 3.6);
+  assert.equal(sq.verdict, 'fit');
+  assert.match(sq.size, /⟦0\.24 × 3\.00² = 2\.16⟧/);
 });

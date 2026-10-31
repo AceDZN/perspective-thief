@@ -199,3 +199,27 @@ export function starsFor(s: StarInput): number {
   if (s.regrabs > 1 || s.failures > 1 || (s.caught ?? 0) > 0) stars -= 1;
   return Math.max(1, stars);
 }
+
+export interface LiveGuide {
+  k: number;
+  verdict: DropCheck['verdict'];
+  /** "label: have × k = got · need" with numbers in ⟦…⟧. */
+  size: string;
+  /** Which way to move, in words (never only a color). */
+  status: string;
+}
+
+/**
+ * The live lens readout while aiming a carried exhibit at its target: what the plate's measure
+ * would become if dropped from here, and whether to step back or come closer. Shown on the first
+ * level and after a hint, so a player can see k = d ÷ d₁ at work before having to compute it.
+ */
+export function liveGuide(m: Measure, need: Need, currentScale: number, d1: number, d: number): LiveGuide {
+  const check = checkDrop({ measure: m, need, currentScale, d1, d2: d });
+  const have = scaledMeasure(m, currentScale);
+  const sup = m.power === 1 ? '' : m.power === 2 ? '²' : '³';
+  const want = need.min !== undefined && need.max !== undefined ? `${fmt(need.min)}–${fmt(need.max)}` : fmt(need.value);
+  const size = `${m.label}: ⟦${fmt(have)} × ${fmtFixed(check.k)}${sup} = ${fmtFixed(check.got)}⟧ ${unitText(m.unit)} · צריך ⟦${want}⟧`;
+  const status = check.verdict === 'fit' ? '✓ בדיוק! הניחו עכשיו' : check.verdict === 'tooBig' ? '▼ גדול מדי — התקרבו' : '▲ קטן מדי — התרחקו';
+  return { k: check.k, verdict: check.verdict, size, status };
+}

@@ -61,6 +61,15 @@ bdi, .ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; white-
 .sep { width: 70%; height: 1px; background: rgba(232, 200, 115, 0.4); }
 .d { color: #fff; font-size: 36px; font-weight: 700; direction: ltr; text-shadow: 0 0 12px rgba(160, 210, 255, 0.5); }
 .d.muted { color: rgba(255, 255, 255, 0.35); }
+.k { color: rgba(232, 200, 115, 0.95); font-size: 16px; font-weight: 600; direction: ltr; min-height: 18px; }
+#hudGuide {
+  position: absolute; left: 50%; bottom: 190px; transform: translateX(-50%); padding: 8px 18px; border-radius: 12px;
+  background: var(--panel); border: 2px solid var(--gold2); text-align: center; width: max-content; max-width: 92%; pointer-events: none;
+}
+#hudGuide .gsize { font-size: 18px; }
+#hudGuide .gstat { font-size: 20px; font-weight: 700; margin-top: 2px; color: #ffe2a0; }
+#hudGuide[data-v='fit'] { border-color: #6fdc8c; }
+#hudGuide[data-v='fit'] .gstat { color: #d8ffe2; }
 .aimtag { font-size: 14px; color: rgba(255, 255, 255, 0.75); min-height: 18px; }
 #lensHud.alarm .bezel { border-color: #b83535; box-shadow: 0 0 0 3px #4a0e0e, 0 0 0 6px #ff6161, 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 0 30px rgba(255, 60, 60, 0.3); }
 #lensHud.alarm .d1 { color: #ff8a8a; }
@@ -197,6 +206,10 @@ body.touch .chip { bottom: auto; top: 120px; right: 16px; }
   .bezel { width: 190px; height: 112px; border-width: 6px; }
   .d { font-size: 26px; }
   .d1 { font-size: 15px; }
+  .k { font-size: 12px; min-height: 14px; }
+  #hudGuide { bottom: 128px; padding: 5px 10px; }
+  #hudGuide .gsize { font-size: 13px; }
+  #hudGuide .gstat { font-size: 14px; }
   .aimtag { font-size: 11px; }
   .chip { max-width: 70cqw; font-size: 14px; }
   .card h2 { font-size: 30px; }
@@ -297,3 +310,5 @@ body.reduced .rankup { animation: none; }
 .recap .rh { font-size: 12px; color: var(--gold); letter-spacing: 0.05em; }
 .recap bdi { font-weight: 700; color: #ffe7a6; }
 @container (max-width: 700px) { .recap { font-size: 12px; } }
+/* On touch the guide already says when to place; the prompt chip would sit on top of it. */
+body.touch #hudGuide:not([hidden]) ~ #prompt { opacity: 0; }
